@@ -81,12 +81,15 @@ if st.button("🎲 Random cặp đấu"):
         time.sleep(0.15)
 
     # Kết quả cuối cùng
+    # Kết quả cuối cùng
     final_pairs = generate_pairs(list_a, list_b)
     result_text = "\n".join([
-        f"Cặp {i+1}: {a} - {b}" + (" ✅" if (a, b) in predefined_pairs else "")
+        f"Cặp {i+1}: {a} - {b}"  # bỏ ✅ đi
         for i, (a, b) in enumerate(final_pairs)
     ])
-    placeholder.markdown(f"### ✅ Kết quả cuối cùng\n\n```\n{result_text}\n```")
+    placeholder.markdown(f"### Kết quả cuối cùng\n\n```\n{result_text}\n```")
+
+
 
 
 
