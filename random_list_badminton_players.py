@@ -50,8 +50,8 @@ def random_pairs(list_a, list_b, fixed_pairs):
 
 
 # ===== Streamlit App =====
-st.title("🎲 Random Pair Generator")
-st.write("Welcome! Đây là tool để random cặp từ 2 list.")
+st.title("🏸 Welcome to PUB BADMINTON OPEN!!! 🏸")
+st.write("Welcome! Mình sẽ random cặp đánh dựa trên 2 list lông thủ sau nha mọi người ơi.")
 
 list_a, list_b = load_data()
 
@@ -84,3 +84,4 @@ if st.button("🎰 Shuffle & Generate Pairs"):
     # Download button
     csv = df_result.to_csv(index=False).encode("utf-8")
     st.download_button("⬇️ Tải kết quả về (CSV)", csv, "pairs.csv", "text/csv")
+
