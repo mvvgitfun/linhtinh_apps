@@ -3,11 +3,10 @@ import pandas as pd
 import random
 import time
 
-# Link excel raw (cột đầu tiên chứa tên)
+# ===== Config =====
 LIST_A_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/main/listA.xlsx"
 LIST_B_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/main/listB.xlsx"
 
-# ====== Config predefined pairs ======
 predefined_pairs = [
     ("Lê Huỳnh Minh Trí", "Lan Nguyễn"),
     ("Lê Đình Tiến Đạt", "Ngô Thị Trúc Linh"),
@@ -19,69 +18,60 @@ predefined_pairs = [
     ("Anh Tuân", "Gia Bảo")
 ]
 
-# Load data
-@st.cache_data
+# ===== Functions =====
 def load_data():
-    list_a = pd.read_excel(LIST_A_URL).iloc[:, 0].dropna().tolist()
-    list_b = pd.read_excel(LIST_B_URL).iloc[:, 0].dropna().tolist()
+    list_a = pd.read_excel(LIST_A_URL)["Name"].dropna().tolist()
+    list_b = pd.read_excel(LIST_B_URL)["Name"].dropna().tolist()
     return list_a, list_b
 
+# ===== UI =====
+st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
 
-def random_pairs(list_a, list_b, fixed_pairs):
-    a = list_a.copy()
-    b = list_b.copy()
-    result = []
+# Banner (auto resize full width)
+st.image("https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/blob/main/phuocnguyenthanh.jpg", use_container_width=True)
 
-    # Apply predefined pairs trước
-    for fa, fb in fixed_pairs:
-        if fa in a and fb in b:
-            result.append((fa, fb))
-            a.remove(fa)
-            b.remove(fb)
-
-    # Shuffle phần còn lại
-    random.shuffle(a)
-    random.shuffle(b)
-
-    for i in range(min(len(a), len(b))):
-        result.append((a[i], b[i]))
-
-    return result
-
-
-# ===== Streamlit App =====
-st.title("🏸 Welcome to PUB BADMINTON OPEN!!! 🏸")
-st.write("Welcome! Mình sẽ random cặp đánh dựa trên 2 list lông thủ sau nha mọi người ơi.")
+st.title("🏸 Random Ghép Cặp Cầu Lông")
 
 list_a, list_b = load_data()
 
-# Hiển thị list ban đầu
-st.subheader("📋 Danh sách gốc")
+# Hiện bảng 2 list
 col1, col2 = st.columns(2)
 with col1:
-    st.write("**List A**")
-    st.dataframe(pd.DataFrame(list_a, columns=["Name A"]))
+    st.subheader("Danh sách A")
+    st.table(pd.DataFrame({"Tên": list_a}))
 with col2:
-    st.write("**List B**")
-    st.dataframe(pd.DataFrame(list_b, columns=["Name B"]))
+    st.subheader("Danh sách B")
+    st.table(pd.DataFrame({"Tên": list_b}))
 
-# Nút bắt đầu shuffle
-if st.button("🎰 Shuffle & Generate Pairs"):
+# Shuffle & hiển thị kết quả
+if st.button("🎲 Random cặp đấu"):
     placeholder = st.empty()
-    for i in range(10):  # giả vờ shuffle
-        temp = list(zip(random.sample(list_a, len(list_a)), random.sample(list_b, len(list_b))))
-        df_temp = pd.DataFrame(temp, columns=["A", "B"])
-        placeholder.dataframe(df_temp)
+
+    # Shuffle effect
+    for _ in range(10):
+        temp_pairs = list(zip(random.sample(list_a, len(list_a)), random.sample(list_b, len(list_b))))
+        temp_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(temp_pairs)])
+        placeholder.markdown(f"```\n{temp_text}\n```")
         time.sleep(0.2)
 
-    # Kết quả cuối
-    pairs = random_pairs(list_a, list_b, predefined_pairs)
-    df_result = pd.DataFrame(pairs, columns=["A", "B"])
+    # Kết quả cuối cùng
+    final_pairs = []
+    used_a, used_b = set(), set()
 
-    st.subheader("✅ Kết quả random")
-    st.dataframe(df_result)
+    for a, b in predefined_pairs:
+        if a in list_a and b in list_b:
+            final_pairs.append((a, b))
+            used_a.add(a)
+            used_b.add(b)
 
-    # Download button
-    csv = df_result.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Tải kết quả về (CSV)", csv, "pairs.csv", "text/csv")
+    remaining_a = [x for x in list_a if x not in used_a]
+    remaining_b = [x for x in list_b if x not in used_b]
+    random.shuffle(remaining_a)
+    random.shuffle(remaining_b)
 
+    for a, b in zip(remaining_a, remaining_b):
+        final_pairs.append((a, b))
+
+    # Hiển thị kết quả cuối cùng
+    result_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(final_pairs)])
+    placeholder.markdown(f"### ✅ Kết quả cuối cùng\n\n```\n{result_text}\n```")
