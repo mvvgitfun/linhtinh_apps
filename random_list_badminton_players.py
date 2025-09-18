@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import random
 import time
+from itertools import zip_longest
 
 # ===== Config =====
 LIST_A_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/main/listA.xlsx"
@@ -19,21 +20,38 @@ predefined_pairs = [
 ]
 
 # ===== Functions =====
-@st.cache_data
 def load_data():
-    df_a = pd.read_excel(LIST_A_URL)
-    df_b = pd.read_excel(LIST_B_URL)
-    list_a = df_a.iloc[:, 0].dropna().tolist()
-    list_b = df_b.iloc[:, 0].dropna().tolist()
+    list_a = pd.read_excel(LIST_A_URL)["Name"].dropna().tolist()
+    list_b = pd.read_excel(LIST_B_URL)["Name"].dropna().tolist()
     return list_a, list_b
 
+def generate_pairs(list_a, list_b):
+    final_pairs = []
+    used_a, used_b = set(), set()
+
+    # Thêm predefined pairs trước
+    for a, b in predefined_pairs:
+        if a in list_a and b in list_b:
+            final_pairs.append((a, b))
+            used_a.add(a)
+            used_b.add(b)
+
+    # Phần còn lại random
+    remaining_a = [x for x in list_a if x not in used_a]
+    remaining_b = [x for x in list_b if x not in used_b]
+    random.shuffle(remaining_a)
+    random.shuffle(remaining_b)
+
+    for a, b in zip_longest(remaining_a, remaining_b, fillvalue="(Chưa có bạn)"):
+        final_pairs.append((a, b))
+
+    return final_pairs
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
 
-# Banner (auto resize full width)
-st.image("https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/blob/main/phuocnguyenthanh.jpg", use_container_width=True)
-
+# Banner
+st.image("1d971c70-306f-42ae-a442-4f72cfd6be72.png", use_container_width=True)
 st.title("🏸 Random Ghép Cặp Cầu Lông")
 
 list_a, list_b = load_data()
@@ -42,41 +60,30 @@ list_a, list_b = load_data()
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("Danh sách A")
-    st.table(pd.DataFrame({"Tên": list_a}))
+    st.dataframe(pd.DataFrame({"Tên": list_a}), height=300)
 with col2:
     st.subheader("Danh sách B")
-    st.table(pd.DataFrame({"Tên": list_b}))
+    st.dataframe(pd.DataFrame({"Tên": list_b}), height=300)
 
 # Shuffle & hiển thị kết quả
 if st.button("🎲 Random cặp đấu"):
     placeholder = st.empty()
 
-    # Shuffle effect
+    # Hiệu ứng shuffle nhanh
     for _ in range(10):
         temp_pairs = list(zip(random.sample(list_a, len(list_a)), random.sample(list_b, len(list_b))))
         temp_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(temp_pairs)])
         placeholder.markdown(f"```\n{temp_text}\n```")
-        time.sleep(0.2)
+        time.sleep(0.15)
 
     # Kết quả cuối cùng
-    final_pairs = []
-    used_a, used_b = set(), set()
-
-    for a, b in predefined_pairs:
-        if a in list_a and b in list_b:
-            final_pairs.append((a, b))
-            used_a.add(a)
-            used_b.add(b)
-
-    remaining_a = [x for x in list_a if x not in used_a]
-    remaining_b = [x for x in list_b if x not in used_b]
-    random.shuffle(remaining_a)
-    random.shuffle(remaining_b)
-
-    for a, b in zip(remaining_a, remaining_b):
-        final_pairs.append((a, b))
-
-    # Hiển thị kết quả cuối cùng
-    result_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(final_pairs)])
+    final_pairs = generate_pairs(list_a, list_b)
+    result_text = "\n".join([
+        f"Cặp {i+1}: {a} - {b}" + (" ✅" if (a, b) in predefined_pairs else "")
+        for i, (a, b) in enumerate(final_pairs)
+    ])
     placeholder.markdown(f"### ✅ Kết quả cuối cùng\n\n```\n{result_text}\n```")
 
+# Nút random lại
+if st.button("🔄 Random lại"):
+    st.experimental_rerun()
