@@ -88,8 +88,7 @@ if st.button("🎲 Random cặp đấu"):
     ])
     placeholder.markdown(f"### ✅ Kết quả cuối cùng\n\n```\n{result_text}\n```")
 
-# Nút random lại
-if st.button("🔄 Random lại"):
-    st.experimental_rerun()
+
+
 
 
