@@ -20,10 +20,14 @@ predefined_pairs = [
 ]
 
 # ===== Functions =====
+@st.cache_data
 def load_data():
-    list_a = pd.read_excel(LIST_A_URL)["Name"].dropna().tolist()
-    list_b = pd.read_excel(LIST_B_URL)["Name"].dropna().tolist()
+    df_a = pd.read_excel(LIST_A_URL)
+    df_b = pd.read_excel(LIST_B_URL)
+    list_a = df_a.iloc[:, 0].dropna().tolist()
+    list_b = df_b.iloc[:, 0].dropna().tolist()
     return list_a, list_b
+
 
 def generate_pairs(list_a, list_b):
     final_pairs = []
@@ -87,4 +91,5 @@ if st.button("🎲 Random cặp đấu"):
 # Nút random lại
 if st.button("🔄 Random lại"):
     st.experimental_rerun()
+
 
