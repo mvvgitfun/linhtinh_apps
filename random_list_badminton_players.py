@@ -20,42 +20,29 @@ predefined_pairs = [
 ]
 
 # ===== Functions =====
-@st.cache_data
 def load_data():
     df_a = pd.read_excel(LIST_A_URL)
     df_b = pd.read_excel(LIST_B_URL)
+
+    # Nếu không chắc cột tên, lấy cột đầu tiên
     list_a = df_a.iloc[:, 0].dropna().tolist()
     list_b = df_b.iloc[:, 0].dropna().tolist()
     return list_a, list_b
 
-
 def generate_pairs(list_a, list_b):
-    final_pairs = []
-    used_a, used_b = set(), set()
+    # Shuffle toàn bộ danh sách
+    random.shuffle(list_a)
+    random.shuffle(list_b)
 
-    # Thêm predefined pairs trước
-    for a, b in predefined_pairs:
-        if a in list_a and b in list_b:
-            final_pairs.append((a, b))
-            used_a.add(a)
-            used_b.add(b)
-
-    # Phần còn lại random
-    remaining_a = [x for x in list_a if x not in used_a]
-    remaining_b = [x for x in list_b if x not in used_b]
-    random.shuffle(remaining_a)
-    random.shuffle(remaining_b)
-
-    for a, b in zip_longest(remaining_a, remaining_b, fillvalue="(Chưa có bạn)"):
-        final_pairs.append((a, b))
-
+    # Ghép bằng zip_longest để không bỏ sót ai
+    final_pairs = list(zip_longest(list_a, list_b, fillvalue="(Chưa có bạn)"))
     return final_pairs
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
 
 # Banner
-st.image("https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/blob/main/phuocnguyenthanh.jpg", use_container_width=True)
+# st.image("1d971c70-306f-42ae-a442-4f72cfd6be72.png", use_container_width=True)
 st.title("🏸 Random Ghép Cặp Cầu Lông")
 
 list_a, list_b = load_data()
@@ -81,17 +68,10 @@ if st.button("🎲 Random cặp đấu"):
         time.sleep(0.15)
 
     # Kết quả cuối cùng
-    # Kết quả cuối cùng
     final_pairs = generate_pairs(list_a, list_b)
-    result_text = "\n".join([
-        f"Cặp {i+1}: {a} - {b}"  # bỏ ✅ đi
-        for i, (a, b) in enumerate(final_pairs)
-    ])
+    result_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(final_pairs)])
     placeholder.markdown(f"### Kết quả cuối cùng\n\n```\n{result_text}\n```")
 
-
-
-
-
-
-
+# Nút random lại
+if st.button("🔄 Random lại"):
+    st.experimental_rerun()
