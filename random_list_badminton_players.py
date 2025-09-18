@@ -2,13 +2,12 @@ import streamlit as st
 import pandas as pd
 import random
 import time
-from io import BytesIO
 
-# --- Config ---
-LIST_A_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/refs/heads/main/listA.xlsx"
-LIST_B_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/refs/heads/main/listB.xlsx"
+# Link excel raw (cột đầu tiên chứa tên)
+LIST_A_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/main/listA.xlsx"
+LIST_B_URL = "https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/main/listB.xlsx"
 
-# Định nghĩa cặp cố định (tên phải khớp trong file Excel)
+# ====== Config predefined pairs ======
 predefined_pairs = [
     ("Lê Huỳnh Minh Trí", "Lan Nguyễn"),
     ("Lê Đình Tiến Đạt", "Ngô Thị Trúc Linh"),
@@ -20,75 +19,68 @@ predefined_pairs = [
     ("Anh Tuân", "Gia Bảo")
 ]
 
-# --- Helper ---
+# Load data
+@st.cache_data
 def load_data():
-    # Đọc file Excel, tự động lấy cột đầu tiên
     list_a = pd.read_excel(LIST_A_URL).iloc[:, 0].dropna().tolist()
     list_b = pd.read_excel(LIST_B_URL).iloc[:, 0].dropna().tolist()
     return list_a, list_b
 
-def make_pairs(list_a, list_b, predefined):
-    used_a, used_b = set(), set()
-    pairs = []
 
-    # Add predefined
-    for a, b in predefined:
-        if a in list_a and b in list_b:
-            pairs.append((a, b))
-            used_a.add(a)
-            used_b.add(b)
+def random_pairs(list_a, list_b, fixed_pairs):
+    a = list_a.copy()
+    b = list_b.copy()
+    result = []
 
-    # Shuffle and match rest
-    remain_a = [x for x in list_a if x not in used_a]
-    remain_b = [x for x in list_b if x not in used_b]
-    random.shuffle(remain_a)
-    random.shuffle(remain_b)
+    # Apply predefined pairs trước
+    for fa, fb in fixed_pairs:
+        if fa in a and fb in b:
+            result.append((fa, fb))
+            a.remove(fa)
+            b.remove(fb)
 
-    for a, b in zip(remain_a, remain_b):
-        pairs.append((a, b))
+    # Shuffle phần còn lại
+    random.shuffle(a)
+    random.shuffle(b)
 
-    return pairs
+    for i in range(min(len(a), len(b))):
+        result.append((a[i], b[i]))
 
-def convert_to_excel(pairs):
-    df = pd.DataFrame(pairs, columns=["List A", "List B"])
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, index=False, sheet_name="Pairs")
-    processed_data = output.getvalue()
-    return processed_data
+    return result
 
-# --- App ---
-st.title("🎉 Welcome to Pairing App")
 
-page = st.sidebar.selectbox("Navigation", ["Welcome", "Shuffle & Pair"])
+# ===== Streamlit App =====
+st.title("🎲 Random Pair Generator")
+st.write("Welcome! Đây là tool để random cặp từ 2 list.")
 
-if page == "Welcome":
-    st.header("👋 Welcome")
-    st.write("This app pairs people from **List A** and **List B**. Some pairs are predefined and fixed.")
+list_a, list_b = load_data()
 
-    list_a, list_b = load_data()
-    st.subheader("List A")
-    st.write(list_a)
-    st.subheader("List B")
-    st.write(list_b)
+# Hiển thị list ban đầu
+st.subheader("📋 Danh sách gốc")
+col1, col2 = st.columns(2)
+with col1:
+    st.write("**List A**")
+    st.dataframe(pd.DataFrame(list_a, columns=["Name A"]))
+with col2:
+    st.write("**List B**")
+    st.dataframe(pd.DataFrame(list_b, columns=["Name B"]))
 
-elif page == "Shuffle & Pair":
-    st.header("🔀 Shuffle and Pair")
-    if st.button("Start Pairing!"):
-        with st.spinner("Shuffling..."):
-            time.sleep(2)  # fake animation delay
-        list_a, list_b = load_data()
-        pairs = make_pairs(list_a, list_b, predefined_pairs)
+# Nút bắt đầu shuffle
+if st.button("🎰 Shuffle & Generate Pairs"):
+    placeholder = st.empty()
+    for i in range(10):  # giả vờ shuffle
+        temp = list(zip(random.sample(list_a, len(list_a)), random.sample(list_b, len(list_b))))
+        df_temp = pd.DataFrame(temp, columns=["A", "B"])
+        placeholder.dataframe(df_temp)
+        time.sleep(0.2)
 
-        st.success("✅ Pairing complete!")
-        df_result = pd.DataFrame(pairs, columns=["List A", "List B"])
-        st.table(df_result)
+    # Kết quả cuối
+    pairs = random_pairs(list_a, list_b, predefined_pairs)
+    df_result = pd.DataFrame(pairs, columns=["A", "B"])
 
-        excel_data = convert_to_excel(pairs)
-        st.download_button(
-            label="📥 Download Result",
-            data=excel_data,
-            file_name="pairing_result.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    st.subheader("✅ Kết quả random")
+    st.dataframe(df_result)
 
+    # Download button
+    csv = df_result.to_csv(index=False).encode("utf-8")
+    st.download_button("⬇️ Tải kết quả về (CSV)", csv, "pairs.csv", "text/csv")
