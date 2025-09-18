@@ -51,7 +51,7 @@ def generate_pairs(list_a, list_b):
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
 
 # Banner
-st.image("1d971c70-306f-42ae-a442-4f72cfd6be72.png", use_container_width=True)
+st.image("https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/blob/main/phuocnguyenthanh.jpg", use_container_width=True)
 st.title("🏸 Random Ghép Cặp Cầu Lông")
 
 list_a, list_b = load_data()
@@ -87,3 +87,4 @@ if st.button("🎲 Random cặp đấu"):
 # Nút random lại
 if st.button("🔄 Random lại"):
     st.experimental_rerun()
+
