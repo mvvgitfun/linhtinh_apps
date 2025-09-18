@@ -1,47 +1,42 @@
 import streamlit as st
-import pandas as pd
 import random
+import pandas as pd
 import time
 
-st.set_page_config(page_title="Random Pair Tool", layout="centered")
+st.set_page_config(page_title="Random Pair Demo", layout="centered")
 
-st.title("🎲 Random Pair Generator")
+st.title("🎲 Random Pair Demo")
 
-# Upload file CSV
-file_a = st.file_uploader("Upload list A (CSV, 1 cột)", type=["csv"])
-file_b = st.file_uploader("Upload list B (CSV, 1 cột)", type=["csv"])
+# Tạo list mẫu
+list_a = ["A", "B", "C", "D"]
+list_b = ["X", "Y", "E", "Z"]
 
-# Fixed pairs setup (demo)
+# Cặp cố định (ví dụ: A luôn đi với X)
 fixed_pairs = {
-    "A1": "B3",   # A1 luôn đi với B3
-    "A5": "B4"
+    "A": "X"
 }
 
-if file_a and file_b:
-    list_a = pd.read_csv(file_a, header=None)[0].tolist()
-    list_b = pd.read_csv(file_b, header=None)[0].tolist()
+if st.button("🔀 Shuffle & Pair"):
+    with st.spinner("Shuffling... 🎰"):
+        time.sleep(2)
 
-    if st.button("🔀 Shuffle & Pair"):
-        # Shuffle effect
-        with st.spinner("Shuffling... 🎰"):
-            time.sleep(2)
+    remaining_a = list_a[:]
+    remaining_b = list_b[:]
+    pairs = []
 
-        # Apply fixed pairs
-        remaining_a = list_a[:]
-        remaining_b = list_b[:]
-        pairs = []
-
-        for a, b in fixed_pairs.items():
-            if a in remaining_a and b in remaining_b:
-                pairs.append((a, b))
-                remaining_a.remove(a)
-                remaining_b.remove(b)
-
-        random.shuffle(remaining_a)
-        random.shuffle(remaining_b)
-
-        for a, b in zip(remaining_a, remaining_b):
+    # Ghép cặp cố định trước
+    for a, b in fixed_pairs.items():
+        if a in remaining_a and b in remaining_b:
             pairs.append((a, b))
+            remaining_a.remove(a)
+            remaining_b.remove(b)
 
-        st.success("✨ Done! Here are your pairs:")
-        st.write(pd.DataFrame(pairs, columns=["List A", "List B"]))
+    # Shuffle phần còn lại
+    random.shuffle(remaining_a)
+    random.shuffle(remaining_b)
+
+    for a, b in zip(remaining_a, remaining_b):
+        pairs.append((a, b))
+
+    st.success("✨ Đây là kết quả:")
+    st.write(pd.DataFrame(pairs, columns=["List A", "List B"]))
