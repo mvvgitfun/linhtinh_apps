@@ -22,8 +22,9 @@ predefined_pairs = [
 
 # --- Helper ---
 def load_data():
-    list_a = pd.read_excel(LIST_A_URL)["Name"].dropna().tolist()
-    list_b = pd.read_excel(LIST_B_URL)["Name"].dropna().tolist()
+    # Đọc file Excel, tự động lấy cột đầu tiên
+    list_a = pd.read_excel(LIST_A_URL).iloc[:, 0].dropna().tolist()
+    list_b = pd.read_excel(LIST_B_URL).iloc[:, 0].dropna().tolist()
     return list_a, list_b
 
 def make_pairs(list_a, list_b, predefined):
@@ -90,3 +91,4 @@ elif page == "Shuffle & Pair":
             file_name="pairing_result.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
