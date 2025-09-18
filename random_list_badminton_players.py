@@ -72,6 +72,5 @@ if st.button("🎲 Random cặp đấu"):
     result_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(final_pairs)])
     placeholder.markdown(f"### Kết quả cuối cùng\n\n```\n{result_text}\n```")
 
-# Nút random lại
-if st.button("🔄 Random lại"):
-    st.experimental_rerun()
+
+
