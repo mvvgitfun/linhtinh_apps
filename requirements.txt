@@ -3,10 +3,11 @@ pandas
 openpyxl
 xlsxwriter
 
-
+db-dtypes
 google-cloud-bigquery
 google-auth
 
 googletrans==4.0.0-rc1
 wordcloud
 matplotlib
+
