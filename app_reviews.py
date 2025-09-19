@@ -42,7 +42,7 @@ def load_data():
             `Review Title` AS review_title,
             `Review Text` AS review_text,
             `Developer Reply Text` AS dev_reply
-        FROM `your_project.your_dataset.your_table`
+        FROM `mps-data-139.gpc_reviews_viz.reviews`
         WHERE `Package Name` IS NOT NULL
     """
     df = client.query(query).to_dataframe()
