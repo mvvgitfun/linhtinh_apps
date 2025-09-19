@@ -4,6 +4,7 @@ import random
 import time
 from itertools import zip_longest
 from io import BytesIO
+import streamlit.components.v1 as components
 
 # ===== Predefined Pairs =====
 predefined_pairs = [
@@ -58,6 +59,56 @@ def to_excel_bytes(df: pd.DataFrame) -> bytes:
         df.to_excel(writer, index=False, sheet_name="Pairs")
     buffer.seek(0)
     return buffer.read()
+
+# ===== Fireworks HTML/JS =====
+def fireworks_animation():
+    html_code = """
+    <canvas id="fireworks" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;"></canvas>
+    <script>
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const fireworks = [];
+    function Firework(x,y){
+        this.x=x;this.y=y;this.radius=2;this.alpha=1;this.particles=[];
+        for(let i=0;i<100;i++){
+            const angle=Math.random()*2*Math.PI;
+            const speed=Math.random()*5+2;
+            this.particles.push({
+                x:this.x,y:this.y,
+                vx:Math.cos(angle)*speed,
+                vy:Math.sin(angle)*speed,
+                alpha:1
+            });
+        }
+    }
+    Firework.prototype.update=function(){
+        this.particles.forEach(p=>{
+            p.x+=p.vx;p.y+=p.vy;p.vy+=0.05;p.alpha-=0.01;
+        });
+    };
+    Firework.prototype.draw=function(){
+        this.particles.forEach(p=>{
+            ctx.fillStyle=`rgba(255,${Math.floor(Math.random()*255)},0,${p.alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,2,0,2*Math.PI);
+            ctx.fill();
+        });
+    };
+    function loop(){
+        ctx.fillStyle="rgba(0,0,0,0.2)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        if(Math.random()<0.05){
+            fireworks.push(new Firework(Math.random()*canvas.width, Math.random()*canvas.height/2));
+        }
+        fireworks.forEach(fw=>{fw.update();fw.draw();});
+        requestAnimationFrame(loop);
+    }
+    loop();
+    </script>
+    """
+    components.html(html_code, height=0, width=0)
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
@@ -117,9 +168,8 @@ if uploaded_file_a and uploaded_file_b:
             st.success("🎉 Bùm bùm! Kết quả ghép cặp cuối cùng cho giải PUB BADMINTON OPEN 🔒")
             st.dataframe(df_final, height=420)
 
-        # Pháo hoa / bóng bay nổ tung 🎇
-        st.balloons()
-        st.snow()
+        # Hiệu ứng pháo hoa cinematic 🎆
+        fireworks_animation()
 
         # Nút tải xuống
         st.download_button(
@@ -130,4 +180,3 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
-
