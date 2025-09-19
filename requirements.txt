@@ -9,12 +9,13 @@ google-auth
 
 
 
-
+deep-translator
 googletrans==4.0.0-rc1
 wordcloud
 matplotlib
 google-cloud-bigquery-storage
 db-dtypes
+
 
 
 
