@@ -47,9 +47,6 @@ def generate_pairs(list_a, list_b):
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
-
-# Banner
-st.image("https://raw.githubusercontent.com/mvvgitfun/linhtinh_apps/blob/main/phuocnguyenthanh.jpg", use_container_width=True)
 st.title("🏸 Random Ghép Cặp Cầu Lông")
 
 # Upload files
@@ -57,8 +54,17 @@ uploaded_file_a = st.file_uploader("Tải danh sách A lên", type=["xlsx"])
 uploaded_file_b = st.file_uploader("Tải danh sách B lên", type=["xlsx"])
 
 if uploaded_file_a and uploaded_file_b:
+    # Load dữ liệu
     list_a = load_data_from_file(uploaded_file_a)
     list_b = load_data_from_file(uploaded_file_b)
+
+    # Kiểm tra và hoán đổi nếu người dùng tải nhầm danh sách
+    predefined_a = [pair[0] for pair in predefined_pairs]
+    predefined_b = [pair[1] for pair in predefined_pairs]
+    
+    if all(name in list_b for name in predefined_a) and all(name in list_a for name in predefined_b):
+        # Nếu A và B bị hoán đổi, hoán lại danh sách
+        list_a, list_b = list_b, list_a
 
     # Hiện bảng 2 list
     col1, col2 = st.columns(2)
