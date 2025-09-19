@@ -123,36 +123,44 @@ if uploaded_file_a and uploaded_file_b:
         st.balloons()
 
         # Hiệu ứng xoay + chớp troll mode 🤪
+# Hiệu ứng chữ bay bay xoay vòng pastel 💖
         party_css = """
         <style>
         @keyframes spin {
           0% {transform: rotate(0deg);}
           100% {transform: rotate(360deg);}
         }
+        @keyframes floaty {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+          100% { transform: translateY(0px); }
+        }
         @keyframes flash {
-          0%, 50%, 100% {background-color: transparent;}
-          25%, 75% {background-color: yellow;}
+          0%, 100% { background-color: #ffd6e8; }
+          50% { background-color: #d6f5ff; }
         }
         .party-mode {
-          animation: spin 2s linear infinite, flash 0.5s linear infinite;
-          display: inline-block;
-          padding: 10px;
-          border-radius: 10px;
-          font-size: 24px;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          padding: 20px 40px;
+          border-radius: 20px;
+          font-size: 36px;
           font-weight: bold;
+          color: #ff3399;
+          background-color: #ffd6e8;
+          animation: spin 6s linear infinite, floaty 3s ease-in-out infinite, flash 4s linear infinite;
+          z-index: 9999;
+          box-shadow: 0 0 20px rgba(255, 182, 193, 0.8);
         }
         </style>
         <div class="party-mode">
-          🔥 PUB PARTY MODE 🔥
+          🌈💖 PUB PARTY MODE 💖🌈
         </div>
-        <script>
-        setTimeout(() => {
-            let elem = document.querySelector('.party-mode');
-            if(elem) elem.remove();
-        }, 5000);  // 5 giây rồi tự biến mất
-        </script>
         """
-        components.html(party_css, height=100)
+        components.html(party_css, height=200)
+
 
         # Nút tải xuống
         st.download_button(
@@ -163,3 +171,4 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
