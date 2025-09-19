@@ -141,19 +141,16 @@ if uploaded_file_a and uploaded_file_b:
           50% { background-color: #d6f5ff; }
         }
         .party-mode {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          padding: 20px 40px;
-          border-radius: 20px;
-          font-size: 36px;
+          margin-top: 20px;       /* Sát ngay bảng kết quả */
+          display: inline-block;
+          padding: 30px 60px;     /* Khung to hơn */
+          border-radius: 30px;
+          font-size: 42px;        /* Chữ bự hơn */
           font-weight: bold;
           color: #ff3399;
           background-color: #ffd6e8;
-          animation: spin 6s linear infinite, floaty 3s ease-in-out infinite, flash 4s linear infinite;
-          z-index: 9999;
-          box-shadow: 0 0 20px rgba(255, 182, 193, 0.8);
+          animation: spin 8s linear infinite, floaty 3s ease-in-out infinite, flash 4s linear infinite;
+          box-shadow: 0 0 25px rgba(255, 182, 193, 0.9);
           text-align: center;
         }
         </style>
@@ -161,7 +158,7 @@ if uploaded_file_a and uploaded_file_b:
           🌈💖 PUB BADMINTON OPEN 💖🌈
         </div>
         """
-        st.components.v1.html(party_css, height=800)  # tăng height đủ lớn cho full màn hình
+        st.components.v1.html(party_css, height=200)
 
 
 
@@ -174,5 +171,6 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
