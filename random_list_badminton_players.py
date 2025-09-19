@@ -93,7 +93,7 @@ if uploaded_file_a and uploaded_file_b:
         st.subheader("Danh sách B")
         st.dataframe(pd.DataFrame({"Tên": list_b}), height=300)
 
-    if st.button("🎲 Ghép cặp (Shuffle bùm bùm)"):
+    if st.button("🎲 Bắt đầu ghép cặp nha bà con"):
         final_pairs = generate_final_pairs(list_a, list_b)
         placeholder = st.empty()
 
@@ -130,3 +130,4 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
