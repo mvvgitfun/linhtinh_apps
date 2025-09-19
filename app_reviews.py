@@ -23,7 +23,6 @@ st.markdown(
 )
 
 # ================== BIGQUERY CONNECT ==================
-# Lấy credentials từ Streamlit secrets (st.secrets["bigquery"] should be the JSON structure)
 try:
     sa_info = st.secrets["bigquery"]
     creds = service_account.Credentials.from_service_account_info(sa_info)
@@ -34,9 +33,10 @@ except Exception as e:
 
 # ================== LOAD DATA ==================
 @st.cache_data(ttl=600)
-def load_data():
+def load_data(limit_rows: int = 5000):
     try:
-        query = """
+        limit_clause = f"LIMIT {limit_rows}" if limit_rows and limit_rows > 0 else ""
+        query = f"""
             SELECT
                 Package_Name AS package_name,
                 App_Version_Name AS app_version,
@@ -49,14 +49,26 @@ def load_data():
                 Developer_Reply_Text AS dev_reply
             FROM `mps-data-139.gpc_reviews_viz.reviews`
             WHERE Package_Name IS NOT NULL
+            ORDER BY Review_Submit_Date_and_Time DESC
+            {limit_clause}
         """
         return client.query(query).to_dataframe()
     except Exception as e:
         st.error(f"❌ BigQuery error: {e}")
         return pd.DataFrame()
 
+# ================== SIDEBAR CONTROLS ==================
+st.sidebar.header("Filters & Options")
+
+# Nhập số lượng review muốn load
+limit_rows = st.sidebar.number_input(
+    "🔹 Nhập số review muốn tải (0 = tất cả)",
+    min_value=0, max_value=1000000, value=5000, step=1000
+)
+
 with st.spinner("⏳ Đang tải dữ liệu từ BigQuery..."):
-    df = load_data()
+    df = load_data(limit_rows=limit_rows)
+
 if df.empty:
     st.warning("⚠️ Không có dữ liệu trả về từ BigQuery.")
     st.stop()
@@ -66,23 +78,19 @@ df["review_text"] = df["review_text"].astype("string")
 df["review_time"] = pd.to_datetime(df["review_time"], errors="coerce")
 df["date"] = df["review_time"].dt.date
 
-# ================== SIDEBAR CONTROLS ==================
-st.sidebar.header("Filters & Options")
+# ================== SIDEBAR FILTERS ==================
 apps = df["package_name"].dropna().unique().tolist()
 selected_app = st.sidebar.selectbox("🎮 Chọn game (package name)", apps)
 
-# Version filter
 df_app_all = df[df["package_name"] == selected_app].copy()
 versions = ["Tất cả"] + sorted(df_app_all["app_version"].dropna().unique().tolist())
 selected_version = st.sidebar.selectbox("🛠 Chọn phiên bản", versions)
 
-# Translation option
 translate_enable = st.sidebar.checkbox("🌐 Dịch review sang tiếng Anh (Translate to English)", value=False)
 if translate_enable and not TRANSLATOR_AVAILABLE:
     st.sidebar.error("Module `googletrans` chưa cài. Chạy: pip install googletrans==4.0.0-rc1")
     translate_enable = False
 
-# Analysis options
 use_translated_for_analysis = st.sidebar.checkbox("🔎 Dùng tiếng Anh để phân tích (nếu có)", value=True)
 min_word_count = st.sidebar.number_input("Min words to consider review text", min_value=0, max_value=500, value=1)
 
@@ -136,7 +144,6 @@ with col2:
         "💬 Có review text",
         int(df_app["review_text"].fillna("").str.strip().ne("").sum())
     )
-
 with col3:
     avg_rating = df_app["star_rating"].dropna()
     st.metric("⭐ Điểm trung bình", round(avg_rating.mean(), 2) if not avg_rating.empty else "N/A")
