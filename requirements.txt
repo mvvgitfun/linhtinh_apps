@@ -7,13 +7,14 @@ db-dtypes
 google-cloud-bigquery
 google-auth
 
---upgrade googletrans==4.0.0-rc1
+
 
 googletrans==4.0.0-rc1
 wordcloud
 matplotlib
 google-cloud-bigquery-storage
 db-dtypes
+
 
 
 
