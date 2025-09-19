@@ -13,7 +13,7 @@ predefined_pairs = [
     ("Lê Quang Minh", "Henry"),
     ("Nhựt", "Trần Trọng Anh Khôi"),
     ("Nguyễn Phước Minh", "Nguyễn Bảo Nghi"),
-    ("Lê Đình Tiến Đạt", "Ngô Thị Trúc Linh"),
+    ("Lê Đình Tiến Đạt", "Lê Thị Hồng Nhung"),
     ("Lê Huỳnh Minh Trí", "Xuân Nguyện"),
     ("Võ Nhật Minh", "Chu Đăng Khoa"),
     ("Thanh Trường", "Thảo Ngân"),
@@ -175,6 +175,7 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
 
