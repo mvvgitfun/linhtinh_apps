@@ -71,4 +71,5 @@ if uploaded_file_a and uploaded_file_b:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Danh sách A")
-        st.dataframe(pd.DataFrame({"Tên": list_a}), height=300)_
+        st.dataframe(pd.DataFrame({"Tên": list_a}), height=300)
+
