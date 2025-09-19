@@ -132,7 +132,11 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("👥 Tổng số review", df_app.shape[0])
 with col2:
-    st.metric("💬 Có review text", int(df_app["review_text"].astype(bool).sum()))
+    st.metric(
+        "💬 Có review text",
+        int(df_app["review_text"].fillna("").str.strip().ne("").sum())
+    )
+
 with col3:
     avg_rating = df_app["star_rating"].dropna()
     st.metric("⭐ Điểm trung bình", round(avg_rating.mean(), 2) if not avg_rating.empty else "N/A")
