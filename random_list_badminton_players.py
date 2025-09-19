@@ -124,27 +124,43 @@ if uploaded_file_a and uploaded_file_b:
 
 
         # Shuttlecock animation 🏸
+        # Shuttlecock balloon effect 🏸
         shuttlecock_css = """
         <style>
-        @keyframes fly {
-          0%   { left: -100px; top: 20%; transform: rotate(0deg); }
-          25%  { left: 25%; top: 40%; transform: rotate(90deg); }
-          50%  { left: 50%; top: 10%; transform: rotate(180deg); }
-          75%  { left: 75%; top: 50%; transform: rotate(270deg); }
-          100% { left: 110%; top: 20%; transform: rotate(360deg); }
+        @keyframes rise {
+          0% {
+            transform: translateY(100vh) scale(0.8) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-10vh) scale(1.2) rotate(360deg);
+            opacity: 0;
+          }
         }
         .shuttlecock {
           position: fixed;
-          font-size: 60px;
-          animation: fly 5s linear infinite;
-          z-index: 9999;
+          bottom: -100px;
+          font-size: 48px;
+          animation: rise linear infinite;
         }
         </style>
-        <div class="shuttlecock">🏸</div>
+        <div id="shuttlecocks"></div>
+        
+        <script>
+        function createShuttlecock() {
+          const el = document.createElement("div");
+          el.className = "shuttlecock";
+          el.textContent = "🏸";
+          el.style.left = Math.random() * 100 + "vw";
+          el.style.animationDuration = 4 + Math.random() * 3 + "s"; // 4–7s bay lên
+          el.style.fontSize = 40 + Math.random() * 30 + "px"; // size ngẫu nhiên
+          document.getElementById("shuttlecocks").appendChild(el);
+          setTimeout(() => { el.remove(); }, 7000); // Xóa sau khi bay xong
+        }
+        setInterval(createShuttlecock, 500); // Mỗi 0.5s tạo 1 quả mới
+        </script>
         """
         st.components.v1.html(shuttlecock_css, height=0)
-
-
 
 
         # Hiệu ứng chữ bay bay xoay vòng pastel 💖
@@ -194,6 +210,7 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
 
