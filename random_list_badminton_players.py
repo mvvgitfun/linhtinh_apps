@@ -69,7 +69,7 @@ st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
 
 # Tiêu đề căn giữa
 st.markdown(
-    "<h1 style='text-align: center;'>🏸 Ghép Cặp Cầu Lông — PUB BADMINTON OPEN SEPTEMBER 2025 🏸</h1>",
+    "<h1 style='text-align: center;'>🏸 Ghép Cặp Cầu Lông — PUB BADMINTON OPEN SEPTEMBER 2025🏸</h1>",
     unsafe_allow_html=True,
 )
 
@@ -175,6 +175,7 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
 
