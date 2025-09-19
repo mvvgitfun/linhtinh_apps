@@ -126,6 +126,9 @@ if uploaded_file_a and uploaded_file_b:
         # Shuttlecock animation 🏸
         # Shuttlecock balloon effect 🏸
         shuttlecock_css = """
+        <!DOCTYPE html>
+        <html>
+        <head>
         <style>
         @keyframes rise {
           0% {
@@ -142,8 +145,12 @@ if uploaded_file_a and uploaded_file_b:
           bottom: -100px;
           font-size: 48px;
           animation: rise linear infinite;
+          z-index: 9999;
+          pointer-events: none;
         }
         </style>
+        </head>
+        <body>
         <div id="shuttlecocks"></div>
         
         <script>
@@ -152,16 +159,18 @@ if uploaded_file_a and uploaded_file_b:
           el.className = "shuttlecock";
           el.textContent = "🏸";
           el.style.left = Math.random() * 100 + "vw";
-          el.style.animationDuration = 4 + Math.random() * 3 + "s"; // 4–7s bay lên
-          el.style.fontSize = 40 + Math.random() * 30 + "px"; // size ngẫu nhiên
+          el.style.animationDuration = (4 + Math.random() * 3) + "s"; // 4–7s
+          el.style.fontSize = (40 + Math.random() * 30) + "px";       // random size
           document.getElementById("shuttlecocks").appendChild(el);
-          setTimeout(() => { el.remove(); }, 7000); // Xóa sau khi bay xong
+          setTimeout(() => { el.remove(); }, 7000);
         }
-        setInterval(createShuttlecock, 500); // Mỗi 0.5s tạo 1 quả mới
+        setInterval(createShuttlecock, 500); // mỗi 0.5s tạo 1 quả
         </script>
+        </body>
+        </html>
         """
-        st.components.v1.html(shuttlecock_css, height=0)
-
+        
+        st.components.v1.html(shuttlecock_css, height=600)
 
         # Hiệu ứng chữ bay bay xoay vòng pastel 💖
         party_css = """
@@ -210,6 +219,7 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
 
