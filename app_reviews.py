@@ -24,31 +24,41 @@ st.markdown(
 
 # ================== BIGQUERY CONNECT ==================
 # Lấy credentials từ Streamlit secrets (st.secrets["bigquery"] should be the JSON structure)
-sa_info = st.secrets["bigquery"]
-creds = service_account.Credentials.from_service_account_info(sa_info)
-client = bigquery.Client(credentials=creds, project=creds.project_id)
+try:
+    sa_info = st.secrets["bigquery"]
+    creds = service_account.Credentials.from_service_account_info(sa_info)
+    client = bigquery.Client(credentials=creds, project=creds.project_id)
+except Exception as e:
+    st.error("❌ Không tìm thấy hoặc không đọc được `st.secrets['bigquery']`. Vui lòng kiểm tra lại.")
+    st.stop()
 
 # ================== LOAD DATA ==================
 @st.cache_data(ttl=600)
 def load_data():
-    query = """
-        SELECT
-            `Package Name` AS package_name,
-            `App Version Name` AS app_version,
-            `Reviewer Language` AS reviewer_lang,
-            `Device` AS device,
-            `Review Submit Date and Time` AS review_time,
-            SAFE_CAST(`Star Rating` AS INT64) AS star_rating,
-            `Review Title` AS review_title,
-            `Review Text` AS review_text,
-            `Developer Reply Text` AS dev_reply
-        FROM `mps-data-139.gpc_reviews_viz.reviews`
-        WHERE `Package Name` IS NOT NULL
-    """
-    df = client.query(query).to_dataframe()
-    return df
+    try:
+        query = """
+            SELECT
+                `Package Name` AS package_name,
+                `App Version Name` AS app_version,
+                `Reviewer Language` AS reviewer_lang,
+                `Device` AS device,
+                `Review Submit Date and Time` AS review_time,
+                SAFE_CAST(`Star Rating` AS INT64) AS star_rating,
+                `Review Title` AS review_title,
+                `Review Text` AS review_text,
+                `Developer Reply Text` AS dev_reply
+            FROM `mps-data-139.gpc_reviews_viz.reviews`
+            WHERE `Package Name` IS NOT NULL
+        """
+        return client.query(query).to_dataframe()
+    except Exception as e:
+        st.error(f"❌ BigQuery error: {e}")
+        return pd.DataFrame()
 
 df = load_data()
+if df.empty:
+    st.warning("⚠️ Không có dữ liệu trả về từ BigQuery.")
+    st.stop()
 
 # Normalize columns
 df["review_text"] = df["review_text"].astype("string")
@@ -67,7 +77,6 @@ selected_version = st.sidebar.selectbox("🛠 Chọn phiên bản", versions)
 
 # Translation option
 translate_enable = st.sidebar.checkbox("🌐 Dịch review sang tiếng Anh (Translate to English)", value=False)
-# If translator not installed, show warning and disable
 if translate_enable and not TRANSLATOR_AVAILABLE:
     st.sidebar.error("Module `googletrans` chưa cài. Chạy: pip install googletrans==4.0.0-rc1")
     translate_enable = False
@@ -82,46 +91,34 @@ if selected_version != "Tất cả":
     df_app = df_app[df_app["app_version"] == selected_version].copy()
 
 # ================== TRANSLATION HELPERS ==================
-# Caching translations to avoid repeat network calls
 @st.cache_data(ttl=3600)
 def translate_texts_batch(texts, dest="en"):
-    """
-    texts: list[str] (can include None/empty)
-    returns: list[str] translated (original if fail/empty)
-    """
     if not TRANSLATOR_AVAILABLE:
         return texts
     translator = Translator()
     translated = []
-    # chunk to avoid huge requests
     CHUNK = 50
     for i in range(0, len(texts), CHUNK):
         chunk = texts[i:i+CHUNK]
         strs = ["" if (t is None or str(t).strip() == "") else str(t) for t in chunk]
         try:
             res = translator.translate(strs, dest=dest)
-            # res may be single object or list
             if isinstance(res, list):
                 translated.extend([r.text if getattr(r, "text", None) is not None else "" for r in res])
             else:
                 translated.append(res.text if getattr(res, "text", None) is not None else "")
-        except Exception as e:
-            # fallback: keep original if translation fails
+        except Exception:
             translated.extend(strs)
     return translated
 
-# Prepare translation column if enabled
 if translate_enable:
     st.info("Đang dịch review sang tiếng Anh (caching để giảm requests)...")
     texts = df_app["review_text"].fillna("").astype(str).tolist()
     translated_list = translate_texts_batch(texts, dest="en")
-    # store a new column
     df_app["review_text_en"] = translated_list
 else:
-    # keep english column same as original if not translating
     df_app["review_text_en"] = df_app["review_text"]
 
-# choose which text to use for analysis
 if use_translated_for_analysis:
     analysis_text_col = "review_text_en"
 else:
@@ -148,13 +145,11 @@ st.subheader("⏱ Review theo thời gian (số lượng / ngày)")
 time_series = df_app.groupby("date").size().rename("count")
 st.line_chart(time_series)
 
-# ================== ISSUE ANALYSIS (LOW RATINGS) ==================
+# ================== ISSUE ANALYSIS ==================
 st.subheader("🔍 Phân tích lý do rating thấp (1-2 sao)")
-
 low_reviews = df_app[(df_app["star_rating"] <= 2) & (df_app[analysis_text_col].notna())].copy()
 low_reviews["analysis_text"] = low_reviews[analysis_text_col].astype(str)
 
-# Predefined keywords mapping (you can extend)
 issues_keywords = {
     r"\blag\b": "Lag / Slow",
     r"\bslow\b": "Lag / Slow",
@@ -186,9 +181,7 @@ if not low_reviews.empty:
         st.bar_chart(issue_counts)
     else:
         st.info("Không phát hiện keyword issue nào phổ biến — bạn có thể mở rộng danh sách `issues_keywords`.")
-    # show sample
     st.subheader("📋 Một số review 1-2★ (kèm bản dịch nếu bật)")
-    # Show original lang and translated text (if translated)
     show_cols = ["star_rating", "reviewer_lang", "analysis_text", "detected_issue"]
     st.dataframe(low_reviews[show_cols].rename(columns={"analysis_text": "Review (analysis text)"}).head(50))
 else:
@@ -196,18 +189,14 @@ else:
 
 # ================== WORDCLOUD ==================
 st.subheader("☁️ WordCloud từ review text (dùng text phân tích)")
-
-# WordCloud only if there is text
 all_text = " ".join(df_app[analysis_text_col].dropna().astype(str).tolist())
 if all_text.strip():
     try:
         from wordcloud import WordCloud
         import matplotlib.pyplot as plt
-        # prepare stopwords (add some common tokens, optionally extend by language)
         from wordcloud import STOPWORDS
         stopwords = set(STOPWORDS)
-        # add short words and obvious words
-        extra_stops = {"game", "play", "one", "like", "good", "dont", "dont", "dont", "the", "and"}
+        extra_stops = {"game", "play", "one", "like", "good", "dont", "the", "and"}
         stopwords.update(extra_stops)
 
         wc = WordCloud(width=800, height=400, background_color="white", stopwords=stopwords, max_words=200).generate(all_text)
@@ -221,10 +210,8 @@ if all_text.strip():
 else:
     st.info("Không có review text để tạo WordCloud.")
 
-# ================== RAW DATA (with translation column) ==================
+# ================== RAW DATA ==================
 st.subheader("📜 Dữ liệu gốc (có cột bản dịch khi bật)")
-
-# Prepare display dataframe
 display_cols = ["review_time", "star_rating", "reviewer_lang", "device", "review_text"]
 if translate_enable:
     display_cols += ["review_text_en"]
@@ -244,7 +231,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 )
 
-# ================== NOTES & HELP ==================
+# ================== NOTES ==================
 st.markdown("""
 **Ghi chú**
 - Dịch dùng package `googletrans`; có thể bị rate-limit hoặc không hoàn hảo — nếu gặp lỗi, tắt option translate.
