@@ -4,15 +4,8 @@ import json
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from io import BytesIO
-from collections import Counter
 import re
-
-# optional translation lib
-try:
-    from googletrans import Translator
-    TRANSLATOR_AVAILABLE = True
-except Exception:
-    TRANSLATOR_AVAILABLE = False
+from collections import Counter
 
 # ================== CONFIG ==================
 st.set_page_config(page_title="📊 Game Review Analytics", layout="wide")
@@ -27,16 +20,15 @@ try:
     sa_info = st.secrets["bigquery"]
     creds = service_account.Credentials.from_service_account_info(sa_info)
     client = bigquery.Client(credentials=creds, project=creds.project_id)
-except Exception as e:
+except Exception:
     st.error("❌ Không tìm thấy hoặc không đọc được `st.secrets['bigquery']`. Vui lòng kiểm tra lại.")
     st.stop()
 
 # ================== LOAD DATA ==================
 @st.cache_data(ttl=600)
-def load_data(limit_rows: int = 5000):
+def load_data():
     try:
-        limit_clause = f"LIMIT {limit_rows}" if limit_rows and limit_rows > 0 else ""
-        query = f"""
+        query = """
             SELECT
                 Package_Name AS package_name,
                 App_Version_Name AS app_version,
@@ -49,26 +41,14 @@ def load_data(limit_rows: int = 5000):
                 Developer_Reply_Text AS dev_reply
             FROM `mps-data-139.gpc_reviews_viz.reviews`
             WHERE Package_Name IS NOT NULL
-            ORDER BY Review_Submit_Date_and_Time DESC
-            {limit_clause}
         """
         return client.query(query).to_dataframe()
     except Exception as e:
         st.error(f"❌ BigQuery error: {e}")
         return pd.DataFrame()
 
-# ================== SIDEBAR CONTROLS ==================
-st.sidebar.header("Filters & Options")
-
-# Nhập số lượng review muốn load
-limit_rows = st.sidebar.number_input(
-    "🔹 Nhập số review muốn tải (0 = tất cả)",
-    min_value=0, max_value=1000000, value=5000, step=1000
-)
-
 with st.spinner("⏳ Đang tải dữ liệu từ BigQuery..."):
-    df = load_data(limit_rows=limit_rows)
-
+    df = load_data()
 if df.empty:
     st.warning("⚠️ Không có dữ liệu trả về từ BigQuery.")
     st.stop()
@@ -78,19 +58,22 @@ df["review_text"] = df["review_text"].astype("string")
 df["review_time"] = pd.to_datetime(df["review_time"], errors="coerce")
 df["date"] = df["review_time"].dt.date
 
-# ================== SIDEBAR FILTERS ==================
+# ================== SIDEBAR CONTROLS ==================
+st.sidebar.header("Filters & Options")
 apps = df["package_name"].dropna().unique().tolist()
 selected_app = st.sidebar.selectbox("🎮 Chọn game (package name)", apps)
 
+# Version filter
 df_app_all = df[df["package_name"] == selected_app].copy()
 versions = ["Tất cả"] + sorted(df_app_all["app_version"].dropna().unique().tolist())
 selected_version = st.sidebar.selectbox("🛠 Chọn phiên bản", versions)
 
-translate_enable = st.sidebar.checkbox("🌐 Dịch review sang tiếng Anh (Translate to English)", value=False)
-if translate_enable and not TRANSLATOR_AVAILABLE:
-    st.sidebar.error("Module `googletrans` chưa cài. Chạy: pip install googletrans==4.0.0-rc1")
-    translate_enable = False
+# Translation option (deep-translator)
+from deep_translator import GoogleTranslator
 
+translate_enable = st.sidebar.checkbox("🌐 Dịch review sang tiếng Anh (Translate to English)", value=False)
+
+# Analysis options
 use_translated_for_analysis = st.sidebar.checkbox("🔎 Dùng tiếng Anh để phân tích (nếu có)", value=True)
 min_word_count = st.sidebar.number_input("Min words to consider review text", min_value=0, max_value=500, value=1)
 
@@ -102,22 +85,15 @@ if selected_version != "Tất cả":
 # ================== TRANSLATION HELPERS ==================
 @st.cache_data(ttl=3600)
 def translate_texts_batch(texts, dest="en"):
-    if not TRANSLATOR_AVAILABLE:
-        return texts
-    translator = Translator()
     translated = []
-    CHUNK = 50
-    for i in range(0, len(texts), CHUNK):
-        chunk = texts[i:i+CHUNK]
-        strs = ["" if (t is None or str(t).strip() == "") else str(t) for t in chunk]
+    for t in texts:
         try:
-            res = translator.translate(strs, dest=dest)
-            if isinstance(res, list):
-                translated.extend([r.text if getattr(r, "text", None) is not None else "" for r in res])
+            if not t or str(t).strip() == "":
+                translated.append("")
             else:
-                translated.append(res.text if getattr(res, "text", None) is not None else "")
+                translated.append(GoogleTranslator(source="auto", target=dest).translate(t))
         except Exception:
-            translated.extend(strs)
+            translated.append(t)
     return translated
 
 if translate_enable:
@@ -231,16 +207,10 @@ st.dataframe(df_app[display_cols].sort_values(by="review_time", ascending=False)
 
 # ================== DOWNLOAD ==================
 def to_excel_bytes(df_export: pd.DataFrame) -> bytes:
-    # ép toàn bộ dữ liệu thành string để tránh lỗi khi ghi Excel
-    df_safe = df_export.copy()
-    for col in df_safe.columns:
-        df_safe[col] = df_safe[col].astype(str)
-
     with BytesIO() as buffer:
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df_safe.to_excel(writer, index=False, sheet_name="Reviews")
+            df_export.to_excel(writer, index=False, sheet_name="Reviews")
         return buffer.getvalue()
-
 
 st.download_button(
     "⬇️ Tải dữ liệu (.xlsx)",
@@ -252,7 +222,7 @@ st.download_button(
 # ================== NOTES ==================
 st.markdown("""
 **Ghi chú**
-- Dịch dùng package `googletrans`; có thể bị rate-limit hoặc không hoàn hảo — nếu gặp lỗi, tắt option translate.
-- `st.secrets["bigquery"]` phải chứa JSON của service account (copy nguyên file service_account.json vào Streamlit secrets).
+- Dịch dùng package `deep-translator` (ổn định hơn googletrans).
+- `st.secrets["bigquery"]` phải chứa JSON của service account.
 - Nếu muốn cải thiện phân loại issue, mở rộng `issues_keywords`.
 """)
