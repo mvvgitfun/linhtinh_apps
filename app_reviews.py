@@ -38,17 +38,17 @@ def load_data():
     try:
         query = """
             SELECT
-                `Package Name` AS package_name,
-                `App Version Name` AS app_version,
-                `Reviewer Language` AS reviewer_lang,
-                `Device` AS device,
-                `Review Submit Date and Time` AS review_time,
-                SAFE_CAST(`Star Rating` AS INT64) AS star_rating,
-                `Review Title` AS review_title,
-                `Review Text` AS review_text,
-                `Developer Reply Text` AS dev_reply
+                Package_Name AS package_name,
+                App_Version_Name` AS app_version,
+                Reviewer_Language` AS reviewer_lang,
+                Device AS device,
+                Review_Submit_Date_and_Time AS review_time,
+                SAFE_CAST(Star Rating AS INT64) AS star_rating,
+                Review_Title AS review_title,
+                Review_Text AS review_text,
+                Developer_Reply_Text AS dev_reply
             FROM `mps-data-139.gpc_reviews_viz.reviews`
-            WHERE `Package Name` IS NOT NULL
+            WHERE Package_Name IS NOT NULL
         """
         return client.query(query).to_dataframe()
     except Exception as e:
