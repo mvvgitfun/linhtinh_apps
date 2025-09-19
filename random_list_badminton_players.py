@@ -69,7 +69,7 @@ def to_excel_bytes(df: pd.DataFrame) -> bytes:
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
-st.title("🏸 Random Ghép Cặp Cầu Lông — Phiên bản tự nhiên hơn")
+st.title("🏸 PUB BADMINTON OPEN September 2025")
 
 uploaded_file_a = st.file_uploader("📂 Tải danh sách A lên", type=["xlsx"])
 uploaded_file_b = st.file_uploader("📂 Tải danh sách B lên", type=["xlsx"])
@@ -122,7 +122,7 @@ if uploaded_file_a and uploaded_file_b:
         # Hiển thị kết quả cuối
         df_final = pd.DataFrame(final_pairs, columns=["Người A", "Người B"])
         with placeholder.container():
-            st.success("✅ Kết quả ghép cặp (đã lock!)")
+            st.success("✅ Kết quả ghép cặp đánh cho giải PUB BADMINTON OPEN!!!")
             st.dataframe(df_final, height=420)
 
         # Nút tải xuống
@@ -134,3 +134,4 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
