@@ -122,13 +122,32 @@ if uploaded_file_a and uploaded_file_b:
             st.success("🎉 Bùm bùm! Kết quả ghép cặp cuối cùng cho giải PUB BADMINTON OPEN 🔒")
             st.dataframe(df_final, height=420)
 
-        # Pháo nổ & bóng bay 🎆🎈
-        st.snow()
-        st.balloons()
 
-        # Hiệu ứng xoay + chớp troll mode 🤪
+        # Shuttlecock animation 🏸
+        shuttlecock_css = """
+        <style>
+        @keyframes fly {
+          0%   { left: -100px; top: 20%; transform: rotate(0deg); }
+          25%  { left: 25%; top: 40%; transform: rotate(90deg); }
+          50%  { left: 50%; top: 10%; transform: rotate(180deg); }
+          75%  { left: 75%; top: 50%; transform: rotate(270deg); }
+          100% { left: 110%; top: 20%; transform: rotate(360deg); }
+        }
+        .shuttlecock {
+          position: fixed;
+          font-size: 60px;
+          animation: fly 5s linear infinite;
+          z-index: 9999;
+        }
+        </style>
+        <div class="shuttlecock">🏸</div>
+        """
+        st.components.v1.html(shuttlecock_css, height=0)
 
-# Hiệu ứng chữ bay bay xoay vòng pastel 💖
+
+
+
+        # Hiệu ứng chữ bay bay xoay vòng pastel 💖
         party_css = """
         <style>
         @keyframes spin {
@@ -175,6 +194,7 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
 
