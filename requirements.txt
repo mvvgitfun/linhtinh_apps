@@ -8,12 +8,14 @@ google-cloud-bigquery
 google-auth
 
 
+git+https://github.com/ssut/py-googletrans.git@master
 
 googletrans==4.0.0-rc1
 wordcloud
 matplotlib
 google-cloud-bigquery-storage
 db-dtypes
+
 
 
 
