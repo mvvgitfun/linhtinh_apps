@@ -39,8 +39,8 @@ def load_data():
         query = """
             SELECT
                 Package_Name AS package_name,
-                App_Version_Name` AS app_version,
-                Reviewer_Language` AS reviewer_lang,
+                App_Version_Name AS app_version,
+                Reviewer_Language AS reviewer_lang,
                 Device AS device,
                 Review_Submit_Date_and_Time AS review_time,
                 SAFE_CAST(Star Rating AS INT64) AS star_rating,
