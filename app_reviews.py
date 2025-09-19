@@ -55,7 +55,8 @@ def load_data():
         st.error(f"❌ BigQuery error: {e}")
         return pd.DataFrame()
 
-df = load_data()
+with st.spinner("⏳ Đang tải dữ liệu từ BigQuery..."):
+    df = load_data()
 if df.empty:
     st.warning("⚠️ Không có dữ liệu trả về từ BigQuery.")
     st.stop()
