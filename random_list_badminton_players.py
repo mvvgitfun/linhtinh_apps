@@ -41,8 +41,12 @@ def generate_final_pairs(list_a, list_b):
     remaining_b = [x for x in list_b if x not in used_b]
     random.shuffle(remaining_a)
     random.shuffle(remaining_b)
-    final_pairs = used_pairs + list(zip_longest(remaining_a, remaining_b, fillvalue="(Chưa có bạn)"))
-    return final_pairs
+    random_pairs = list(zip_longest(remaining_a, remaining_b, fillvalue="(Chưa có bạn)"))
+    all_pairs = used_pairs + random_pairs
+
+    # Quan trọng: random lại vị trí của tất cả cặp (để predefined không nằm hết trên đầu)
+    random.shuffle(all_pairs)
+    return all_pairs
 
 def maybe_swap_lists(list_a, list_b):
     """Hoán đổi list nếu user upload nhầm."""
@@ -65,9 +69,8 @@ def to_excel_bytes(df: pd.DataFrame) -> bytes:
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
-st.title("🏸 Random Ghép Cặp Cầu Lông — Phiên bản xịn xò")
+st.title("🏸 Random Ghép Cặp Cầu Lông — Phiên bản tự nhiên hơn")
 
-# Upload
 uploaded_file_a = st.file_uploader("📂 Tải danh sách A lên", type=["xlsx"])
 uploaded_file_b = st.file_uploader("📂 Tải danh sách B lên", type=["xlsx"])
 
@@ -93,14 +96,14 @@ if uploaded_file_a and uploaded_file_b:
         st.subheader("Danh sách B")
         st.dataframe(pd.DataFrame({"Tên": list_b}), height=300)
 
-    if st.button("🎲 Ghép cặp (Shuffle xịn xò)"):
-        # Kết quả cuối cùng (đúng predefined)
+    if st.button("🎲 Ghép cặp (Shuffle tự nhiên)"):
+        # Kết quả cuối cùng
         final_pairs = generate_final_pairs(list_a, list_b)
 
         # Placeholder để update animation
         placeholder = st.empty()
 
-        # Lấy toàn bộ tên để shuffle giả vờ
+        # Shuffle animation: tất cả tên (predefined + remaining)
         all_a = list_a.copy()
         all_b = list_b.copy()
 
