@@ -24,9 +24,7 @@ def load_data_from_file(uploaded_file):
     return df.iloc[:, 0].dropna().astype(str).tolist()
 
 def split_predefined_used(list_a, list_b):
-    """Trả về các predefined pairs hợp lệ + used sets."""
-    used_pairs = []
-    used_a, used_b = set(), set()
+    used_pairs, used_a, used_b = [], set(), set()
     for a, b in predefined_pairs:
         if a in list_a and b in list_b:
             used_pairs.append((a, b))
@@ -35,7 +33,6 @@ def split_predefined_used(list_a, list_b):
     return used_pairs, used_a, used_b
 
 def generate_final_pairs(list_a, list_b):
-    """Sinh kết quả cuối cùng (đúng predefined + random phần còn lại)."""
     used_pairs, used_a, used_b = split_predefined_used(list_a, list_b)
     remaining_a = [x for x in list_a if x not in used_a]
     remaining_b = [x for x in list_b if x not in used_b]
@@ -43,19 +40,14 @@ def generate_final_pairs(list_a, list_b):
     random.shuffle(remaining_b)
     random_pairs = list(zip_longest(remaining_a, remaining_b, fillvalue="(Chưa có bạn)"))
     all_pairs = used_pairs + random_pairs
-
-    # Quan trọng: random lại vị trí của tất cả cặp (để predefined không nằm hết trên đầu)
-    random.shuffle(all_pairs)
+    random.shuffle(all_pairs)  # để predefined không dính hết trên đầu
     return all_pairs
 
 def maybe_swap_lists(list_a, list_b):
-    """Hoán đổi list nếu user upload nhầm."""
     predefined_a = [pair[0] for pair in predefined_pairs]
     predefined_b = [pair[1] for pair in predefined_pairs]
-
     score_a = sum(name in list_b for name in predefined_a)
     score_b = sum(name in list_a for name in predefined_b)
-
     if score_a > len(predefined_a) // 2 and score_b > len(predefined_b) // 2:
         return list_b, list_a
     return list_a, list_b
@@ -69,7 +61,12 @@ def to_excel_bytes(df: pd.DataFrame) -> bytes:
 
 # ===== UI =====
 st.set_page_config(page_title="Random Badminton Pairs", layout="centered")
-st.title("🏸 PUB BADMINTON OPEN September 2025")
+
+# Tiêu đề căn giữa
+st.markdown(
+    "<h1 style='text-align: center;'>🏸 Ghép Cặp Cầu Lông — PUB BADMINTON OPEN SEPTEMBER 2025 🏸</h1>",
+    unsafe_allow_html=True,
+)
 
 uploaded_file_a = st.file_uploader("📂 Tải danh sách A lên", type=["xlsx"])
 uploaded_file_b = st.file_uploader("📂 Tải danh sách B lên", type=["xlsx"])
@@ -96,14 +93,10 @@ if uploaded_file_a and uploaded_file_b:
         st.subheader("Danh sách B")
         st.dataframe(pd.DataFrame({"Tên": list_b}), height=300)
 
-    if st.button("🎲 Ghép cặp (Shuffle tự nhiên)"):
-        # Kết quả cuối cùng
+    if st.button("🎲 Ghép cặp (Shuffle bùm bùm)"):
         final_pairs = generate_final_pairs(list_a, list_b)
-
-        # Placeholder để update animation
         placeholder = st.empty()
 
-        # Shuffle animation: tất cả tên (predefined + remaining)
         all_a = list_a.copy()
         all_b = list_b.copy()
 
@@ -119,11 +112,14 @@ if uploaded_file_a and uploaded_file_b:
                 st.dataframe(df_tmp, height=420)
             time.sleep(shuffle_speed / 1000.0)
 
-        # Hiển thị kết quả cuối
         df_final = pd.DataFrame(final_pairs, columns=["Người A", "Người B"])
         with placeholder.container():
-            st.success("✅ Kết quả ghép cặp đánh cho giải PUB BADMINTON OPEN!!!")
+            st.success("🎉 Bùm bùm! Kết quả ghép cặp cuối cùng cho giải PUB BADMINTON OPEN 🔒")
             st.dataframe(df_final, height=420)
+
+        # Pháo hoa / bóng bay nổ tung 🎇
+        st.balloons()
+        st.snow()
 
         # Nút tải xuống
         st.download_button(
@@ -134,4 +130,3 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
-
