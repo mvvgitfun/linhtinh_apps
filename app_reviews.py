@@ -231,10 +231,16 @@ st.dataframe(df_app[display_cols].sort_values(by="review_time", ascending=False)
 
 # ================== DOWNLOAD ==================
 def to_excel_bytes(df_export: pd.DataFrame) -> bytes:
+    # ép toàn bộ dữ liệu thành string để tránh lỗi khi ghi Excel
+    df_safe = df_export.copy()
+    for col in df_safe.columns:
+        df_safe[col] = df_safe[col].astype(str)
+
     with BytesIO() as buffer:
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df_export.to_excel(writer, index=False, sheet_name="Reviews")
+            df_safe.to_excel(writer, index=False, sheet_name="Reviews")
         return buffer.getvalue()
+
 
 st.download_button(
     "⬇️ Tải dữ liệu (.xlsx)",
