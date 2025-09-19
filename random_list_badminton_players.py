@@ -123,6 +123,7 @@ if uploaded_file_a and uploaded_file_b:
         st.balloons()
 
         # Hiệu ứng xoay + chớp troll mode 🤪
+
 # Hiệu ứng chữ bay bay xoay vòng pastel 💖
         party_css = """
         <style>
@@ -153,13 +154,15 @@ if uploaded_file_a and uploaded_file_b:
           animation: spin 6s linear infinite, floaty 3s ease-in-out infinite, flash 4s linear infinite;
           z-index: 9999;
           box-shadow: 0 0 20px rgba(255, 182, 193, 0.8);
+          text-align: center;
         }
         </style>
         <div class="party-mode">
-          🌈💖 PUB PARTY MODE 💖🌈
+          🌈💖 PUB BADMINTON OPEN 💖🌈
         </div>
         """
-        components.html(party_css, height=200)
+        st.components.v1.html(party_css, height=800)  # tăng height đủ lớn cho full màn hình
+
 
 
         # Nút tải xuống
@@ -171,4 +174,5 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
