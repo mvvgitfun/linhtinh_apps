@@ -27,7 +27,8 @@ def generate_pairs(list_a, list_b):
     final_pairs = []
     used_a, used_b = set(), set()
 
-    # Thêm predefined pairs trước
+    # Thêm predefined pairs sau khi random
+    random.shuffle(predefined_pairs)
     for a, b in predefined_pairs:
         if a in list_a and b in list_b:
             final_pairs.append((a, b))
@@ -66,30 +67,8 @@ if uploaded_file_a and uploaded_file_b:
         # Nếu A và B bị hoán đổi, hoán lại danh sách
         list_a, list_b = list_b, list_a
 
-    # Hiện bảng 2 list
+    # Hiển thị danh sách A và B
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Danh sách A")
-        st.dataframe(pd.DataFrame({"Tên": list_a}), height=300)
-    with col2:
-        st.subheader("Danh sách B")
-        st.dataframe(pd.DataFrame({"Tên": list_b}), height=300)
-
-    # Shuffle & hiển thị kết quả
-    if st.button("🎲 Random cặp đấu"):
-        placeholder = st.empty()
-
-        # Hiệu ứng shuffle lâu hơn (15 lần shuffle, mỗi lần delay 0.3s)
-        for _ in range(15):
-            temp_pairs = list(zip(random.sample(list_a, len(list_a)), random.sample(list_b, len(list_b))))
-            temp_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(temp_pairs)])
-            placeholder.markdown(f"```\n{temp_text}\n```")
-            time.sleep(0.3)
-
-        # Kết quả cuối cùng
-        final_pairs = generate_pairs(list_a, list_b)
-        result_text = "\n".join([f"Cặp {i+1}: {a} - {b}" for i, (a, b) in enumerate(final_pairs)])
-        placeholder.markdown(f"### Kết quả cuối cùng\n\n```\n{result_text}\n```")
-
-else:
-    st.warning("Vui lòng tải lên cả hai danh sách A và B.")
+        st.dataframe(pd.DataFrame({"Tên": list_a}), height=300)_
