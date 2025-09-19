@@ -8,10 +8,14 @@ import streamlit.components.v1 as components
 
 # ===== Predefined Pairs =====
 predefined_pairs = [
-    ("Lê Huỳnh Minh Trí", "Lan Nguyễn"),
+    ("Nguyễn Quốc Cường", "Liên Tường Tâm"),
+    ("Mai Trương Bảo Minh", "Minh Tú"),
+    ("Lê Quang Minh", "Henry"),
+    ("Nhựt", "Trần Trọng Anh Khôi"),
+    ("Nguyễn Phước Minh", "Nguyễn Bảo Nghi"),
     ("Lê Đình Tiến Đạt", "Ngô Thị Trúc Linh"),
+    ("Lê Huỳnh Minh Trí", "Xuân Nguyện"),
     ("Võ Nhật Minh", "Chu Đăng Khoa"),
-    ("Nguyễn Hoàng Việt", "Nguyễn Mạnh Cường"),
     ("Thanh Trường", "Thảo Ngân"),
     ("Nguyễn Lâm Tùng", "Nguyễn Thị Thùy Linh"),
     ("Lê Thị Ngọc Bích", "Vũ Thế Trọng"),
@@ -171,6 +175,7 @@ if uploaded_file_a and uploaded_file_b:
         )
 else:
     st.info("👉 Hãy tải lên 2 file .xlsx (mỗi file 1 cột tên) để bắt đầu.")
+
 
 
 
