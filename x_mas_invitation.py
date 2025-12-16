@@ -1,80 +1,117 @@
 import streamlit as st
+import pandas as pd
 import time
+from streamlit_gsheets import GSheetsConnection
 
 # --- CẤU HÌNH TRANG WEB ---
 st.set_page_config(
-    page_title="Thiệp Mời Giáng Sinh",
-    page_icon="🎄",
+    page_title="Hế lô bạn ei, toai có lời mời cho bạn nè!",
+    page_icon="💌",
     layout="centered"
 )
 
-# --- THÊM HIỆU ỨNG TUYẾT RƠI (phép thuật của Streamlit) ---
-st.snow()
+# --- KHỞI TẠO SESSION STATE ĐỂ LƯU TÊN KHÁCH MỜI ---
+# Session State giống như "bộ nhớ tạm" của mỗi người dùng
+if 'guest_name' not in st.session_state:
+    st.session_state.guest_name = ""
 
-# --- NỘI DUNG CHÍNH CỦA THIỆP MỜI ---
+# ==============================================================================
+# HÀM HIỂN THỊ TRANG CHÀO MỪNG (CỔNG SOÁT VÉ)
+# ==============================================================================
+def show_welcome_page():
+    st.title("💌 Bạn ei, bạn có một thư mời đặc biệt!")
+    st.write("Vui lòng cho toai biết tên của bạn để mở thiệp mời nhó hẹ hẹ:")
 
-# 1. Tiêu đề chính
-st.title("🎅 BẠN ĐÃ CÓ MỘT TẤM VÉ ĐẾN XỨ SỞ DIỆU KỲ!")
-st.header("✨ **Christmas Party - Phiên bản 'Nhà có gì chơi đó'** ✨", divider='rainbow')
+    name_input = st.text_input("Tên bạn là gì nào?", placeholder="Ví dụ: Ní Đẹp Trai", label_visibility="collapsed")
 
-st.write("") # Thêm một dòng trống
+    if st.button("Xem Thiệp Mời 📬", use_container_width=True, type="primary"):
+        if name_input:
+            # Lưu tên vào session state để dùng sau này
+            st.session_state.guest_name = name_input
+            # Chạy lại script để chuyển sang trang thiệp mời
+            st.rerun()
+        else:
+            st.warning("Bạn ei, nhập tên vào đi hay muốn bị ăn đòn nè... :(")
 
-# 2. Lời mời chính
-st.markdown("""
-Chào mừng bạn iu,
+# ==============================================================================
+# HÀM HIỂN THỊ NỘI DUNG THIỆP MỜI
+# ==============================================================================
+def show_invite_page():
+    # --- HIỆU ỨNG VÀ TIÊU ĐỀ ---
+    st.snow()
+    st.title(f"🎅 Chào {st.session_state.guest_name}, một tấm vé tới buổi tiệc dành cho hội chơi game zà cầu lông!")
+    st.header("✨ **Christmas Party - Phiên bản 'Nhà có gì chơi đó'** ✨", divider='rainbow')
 
-Nhân dịp không có gì đặc biệt nhưng vẫn muốn tụ tập, team chúng mình trân trọng (và hơi ép buộc một chút) mời bạn đến tham dự một buổi tiệc Giáng Sinh "cây nhà lá vườn".
+    st.markdown("""
+    Nhân dịp không có gì đặc biệt nhưng vẫn muốn tụ tập, chúng toai trân trọng (và hơi ép buộc một chút) mời bạn đến tham dự một buổi tiệc Giáng Sinh "cây nhà lá vườn".
 
-Hãy chuẩn bị một tâm hồn đẹp, một chiếc bụng đói và một tinh thần sẵn sàng "quẩy tới bến"!
-""")
+    Hãy chuẩn bị một tâm hồn đẹp, một chiếc bụng đói và một tinh thần sẵn sàng "quẩy tới bến"!
+    """)
 
-st.write("") # Thêm một dòng trống
+    # --- THÔNG TIN CHI TIẾT ---
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("🗓️ Thời gian có thể có mặt:")
+        st.markdown("- **17:00 (5 giờ chiều)**, **Thứ 7**\n- Ngày **27 tháng 12**")
+    with col2:
+        st.subheader("📍 Địa điểm hạ cánh:")
+        st.markdown("- **Chung cư Gold View**, Block A3\n- 346 Bến Vân Đồn, P.1, Q.4")
 
-# 3. Thông tin chi tiết - Dùng các cột cho đẹp
-col1, col2 = st.columns(2)
+    # --- HOẠT ĐỘNG ---
+    st.subheader("🎁 Hoạt động không thể bỏ lỡ:")
+    st.info("Chuẩn bị một món quà **nhỏ xinh (dưới 200k)** để tham gia màn 'SWAP QUÀ' đầy kịch tính và bất ngờ!", icon="💝")
+    st.success("Tiệc sẽ bao gồm đồ ăn, thức uống no nê và một dàn **BOARD GAME** huyền thoại để thử thách sức mạnh tình bạn (hay là hủy hoại tình bạn)!", icon="🎲")
 
-with col1:
-    st.subheader("🗓️ Thời gian diễn ra:")
-    st.markdown("- **17:00 (5 giờ chiều)**, **Thứ 7**")
-    st.markdown("- Ngày **27 tháng 12** (Noel muộn một chút cho nó lạ)")
+    # --- PHẦN TƯƠNG TÁC LƯU VÀO GOOGLE SHEETS ---
+    st.write("---")
+    st.subheader("Bạn sẽ tham gia chứ hẻ? 😉")
 
-with col2:
-    st.subheader("📍 Địa điểm hạ cánh:")
-    st.markdown("- **Chung cư Gold View**, Block A3")
-    st.markdown("- 346 Bến Vân Đồn, P.1, Q.4")
-    # st.link_button("Xem bản đồ Google Maps", "https://maps.app.goo.gl/your-google-maps-link") # Ní có thể thêm link Google Maps ở đây
+    _, col_button, _ = st.columns([1, 2, 1])
+    with col_button:
+        if st.button("CHẮC CHẮN RỒI! XÁC NHẬN NGAY! 🥳", use_container_width=True, type="primary"):
+            with st.spinner("Đang khắc tên bạn lên Google Sheets..."):
+                # Thiết lập kết nối
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                
+                # Đọc dữ liệu cũ
+                existing_data = conn.read(worksheet="Sheet1", usecols=[0, 1], ttl=5)
+                existing_data = existing_data.dropna(how="all")
 
-st.write("") # Thêm một dòng trống
-
-# 4. Các hoạt động "vui là chính"
-st.subheader("🎁 Hoạt động không thể bỏ lỡ:")
-st.info("Chuẩn bị một món quà **nhỏ xinh (dưới 200k)** để tham gia màn 'SWAP QUÀ' đầy kịch tính và bất ngờ. Món quà càng 'bá đạo', càng dễ đi vào lòng đất... à nhầm, lòng người!", icon="💝")
-
-st.success("Tiệc sẽ bao gồm đồ ăn, thức uống no nê và một dàn **BOARD GAME** huyền thoại để thử thách tình bạn. Kẻ thua sẽ phải rửa bát!", icon="🎲")
-
-
-# 5. Nút bấm "thần thánh"
-st.write("") # Thêm một dòng trống
-st.write("") # Thêm một dòng trống
-
-# Căn giữa nút bấm
-_, col_button, _ = st.columns([1,2,1])
-with col_button:
-    if st.button("**XÁC NHẬN THAM GIA NGAY!** 🥳", use_container_width=True, type="primary"):
-        # Hiệu ứng chờ đợi hồi hộp
-        progress_text = "Đang gửi tín hiệu của bạn lên vũ trụ... Vui lòng chờ!"
-        my_bar = st.progress(0, text=progress_text)
-        for percent_complete in range(100):
-            time.sleep(0.02)
-            my_bar.progress(percent_complete + 1, text=progress_text)
-        time.sleep(0.5)
-        my_bar.empty()
-
-        # Bắn pháo hoa và hiển thị lời cảm ơn
-        st.balloons()
-        st.success("Tuyệt vời! Vũ trụ đã nhận được tín hiệu! Hẹn gặp bạn tại buổi tiệc nhé. Đừng quên mang theo quà và một chiếc bụng thật rỗng!", icon="🎉")
-        st.image("https://media.tenor.com/_np6fV12HqsAAAAM/cute-cat-jumping.gif", caption="Yeahh!")
-
-# --- Chân trang ---
-st.write("---")
-st.markdown("<p style='text-align: center; color: gray;'>Một sản phẩm được tạo ra bằng tình yêu và một chút Python ❤️</p>", unsafe_allow_html=True)
+                # Kiểm tra trùng lặp
+                if st.session_state.guest_name in existing_data["Tên Khách Mời"].values:
+                    st.warning("Oops! Tên của bạn đã có trong danh sách rồi. Cảm ơn đã xác nhận lại nhé!")
+                    time.sleep(2)
+                else:
+                    # Tạo DataFrame mới
+                    new_guest = pd.DataFrame([
+                        {
+                            "Tên Khách Mời": st.session_state.guest_name,
+                            "Thời Gian Xác Nhận": pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        }
+                    ])
+                    # Nối và cập nhật lại Sheet
+                    updated_df = pd.concat([existing_data, new_guest], ignore_index=True)
+                    conn.update(worksheet="Sheet1", data=updated_df)
+                    
+                    st.balloons()
+                    st.success("Tuyệt vời! Tên của bạn đã được ghi vào danh sách. Hẹn gặp lại nhé!", icon="🎉")
+                    st.image("https://media.tenor.com/_np6fV12HqsAAAAM/cute-cat-jumping.gif")
+    
+    # --- Hiển thị danh sách khách mời ---
+    st.write("---")
+    with st.expander("Xem ai đã xác nhận tham gia..."):
+        conn_display = st.connection("gsheets", type=GSheetsConnection)
+        guest_list = conn_display.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
+        if not guest_list.empty:
+            st.dataframe(guest_list, use_container_width=True)
+            st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
+        else:
+            st.write("Chưa có ai xác nhận cả, buồn hiu...")
+            
+# ==============================================================================
+# LOGIC CHÍNH: KIỂM TRA XEM ĐÃ CÓ TÊN CHƯA ĐỂ HIỂN THỊ ĐÚNG TRANG
+# ==============================================================================
+if st.session_state.guest_name == "":
+    show_welcome_page()
+else:
+    show_invite_page()
