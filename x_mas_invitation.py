@@ -11,7 +11,6 @@ st.set_page_config(
 )
 
 # --- KHỞI TẠO SESSION STATE ĐỂ LƯU TÊN KHÁCH MỜI ---
-# Session State giống như "bộ nhớ tạm" của mỗi người dùng
 if 'guest_name' not in st.session_state:
     st.session_state.guest_name = ""
 
@@ -21,14 +20,10 @@ if 'guest_name' not in st.session_state:
 def show_welcome_page():
     st.title("💌 Bạn ei, bạn có một thư mời đặc biệt!")
     st.write("Vui lòng cho toai biết tên của bạn để mở thiệp mời nhó hẹ hẹ:")
-
     name_input = st.text_input("Tên bạn là gì nào?", placeholder="Ví dụ: Ní Đẹp Trai", label_visibility="collapsed")
-
     if st.button("Xem Thiệp Mời 📬", use_container_width=True, type="primary"):
         if name_input:
-            # Lưu tên vào session state để dùng sau này
             st.session_state.guest_name = name_input
-            # Chạy lại script để chuyển sang trang thiệp mời
             st.rerun()
         else:
             st.warning("Bạn ei, nhập tên vào đi hay muốn bị ăn đòn nè... :(")
@@ -65,31 +60,32 @@ def show_invite_page():
     # --- PHẦN TƯƠNG TÁC LƯU VÀO GOOGLE SHEETS ---
     st.write("---")
     st.subheader("Bạn sẽ tham gia chứ hẻ? 😉")
+    
+    # === ĐIỂM THAY THẾ QUAN TRỌNG ĐỂ FIX LỖI ===
+    # Thay vì dùng st.connection, ta tạo thủ công từ st.secrets để chắc ăn hơn
+    conn = st.experimental_connection(
+        "gsheets",
+        type=GSheetsConnection,
+    )
+    #===============================================
 
     _, col_button, _ = st.columns([1, 2, 1])
     with col_button:
         if st.button("CHẮC CHẮN RỒI! XÁC NHẬN NGAY! 🥳", use_container_width=True, type="primary"):
             with st.spinner("Đang khắc tên bạn lên Google Sheets..."):
-                # Thiết lập kết nối
-                conn = st.connection("gsheets", type=GSheetsConnection)
-                
-                # Đọc dữ liệu cũ
                 existing_data = conn.read(worksheet="Sheet1", usecols=[0, 1], ttl=5)
                 existing_data = existing_data.dropna(how="all")
 
-                # Kiểm tra trùng lặp
                 if st.session_state.guest_name in existing_data["Tên Khách Mời"].values:
                     st.warning("Oops! Tên của bạn đã có trong danh sách rồi. Cảm ơn đã xác nhận lại nhé!")
                     time.sleep(2)
                 else:
-                    # Tạo DataFrame mới
                     new_guest = pd.DataFrame([
                         {
                             "Tên Khách Mời": st.session_state.guest_name,
                             "Thời Gian Xác Nhận": pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
                         }
                     ])
-                    # Nối và cập nhật lại Sheet
                     updated_df = pd.concat([existing_data, new_guest], ignore_index=True)
                     conn.update(worksheet="Sheet1", data=updated_df)
                     
@@ -100,11 +96,10 @@ def show_invite_page():
     # --- Hiển thị danh sách khách mời ---
     st.write("---")
     with st.expander("Xem ai đã xác nhận tham gia..."):
-        conn_display = st.connection("gsheets", type=GSheetsConnection)
-        Sheet1 = conn_display.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
-        if not Sheet1.empty:
-            st.dataframe(Sheet1, use_container_width=True)
-            st.info(f"Tổng cộng đã có **{len(Sheet1)}** người xác nhận tham gia!")
+        guest_list = conn.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
+        if not guest_list.empty:
+            st.dataframe(guest_list, use_container_width=True)
+            st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
         else:
             st.write("Chưa có ai xác nhận cả, buồn hiu...")
             
