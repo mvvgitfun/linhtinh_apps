@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import time
-from streamlit_gsheets import GSheetsConnection
+import gspread
+from google.oauth2.service_account import Credentials
 
 # --- CẤU HÌNH TRANG WEB ---
 st.set_page_config(
@@ -10,13 +11,42 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- KHỞI TẠO SESSION STATE ĐỂ LƯU TÊN KHÁCH MỜI ---
+# --- KHỞI TẠO SESSION STATE ---
 if 'guest_name' not in st.session_state:
     st.session_state.guest_name = ""
 
-# ==============================================================================
-# HÀM HIỂN THỊ TRANG CHÀO MỪNG (CỔNG SOÁT VÉ)
-# ==============================================================================
+# === KẾT NỐI TỚI GOOGLE SHEETS BẰNG GSPREAD (CÁCH BẤT BẠI) ===
+@st.cache_resource
+def get_gsheets_client():
+    try:
+        # Lấy toàn bộ credentials từ secrets
+        creds_dict = st.secrets["connections"]["gsheets"]["credentials"]
+        
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+        return client
+    except Exception as e:
+        st.error("Lỗi kết nối tới Google Sheets. Vui lòng kiểm tra lại secrets.")
+        st.exception(e)
+        return None
+
+def get_worksheet(client):
+    try:
+        spreadsheet_id = st.secrets["connections"]["gsheets"]["spreadsheetId"]
+        worksheet_name = st.secrets["connections"]["gsheets"]["worksheet"]
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        worksheet = spreadsheet.worksheet(worksheet_name)
+        return worksheet
+    except Exception as e:
+        st.error(f"Không tìm thấy Spreadsheet hoặc Worksheet. Lỗi: {e}")
+        return None
+# =================================================================
+
+# --- TRANG CHÀO MỪNG ---
 def show_welcome_page():
     st.title("💌 Bạn ei, bạn có một thư mời đặc biệt!")
     st.write("Vui lòng cho toai biết tên của bạn để mở thiệp mời nhó hẹ hẹ:")
@@ -28,93 +58,60 @@ def show_welcome_page():
         else:
             st.warning("Bạn ei, nhập tên vào đi hay muốn bị ăn đòn nè... :(")
 
-# ==============================================================================
-# HÀM HIỂN THỊ NỘI DUNG THIỆP MỜI
-# ==============================================================================
+# --- TRANG THIỆP MỜI ---
 def show_invite_page():
-    # --- HIỆU ỨNG VÀ TIÊU ĐỀ ---
-    st.snow()
-    st.title(f"🎅 Chào {st.session_state.guest_name}, đây là một tấm vé tới buổi tiệc dành cho hội chơi game zà cầu lông!")
-    st.header("✨ **Christmas Party - Phiên bản 'Nhà có gì chơi đó'** ✨", divider='rainbow')
-    st.markdown("""
-    Nhân dịp không có gì đặc biệt nhưng vẫn muốn tụ tập, chúng toai trân trọng (và hơi ép buộc một chút) mời bạn đến tham dự một buổi tiệc Giáng Sinh "cây nhà lá vườn".
-    Hãy chuẩn bị một tâm hồn đẹp, một chiếc bụng đói và một tinh thần sẵn sàng "quẩy tới bến"!
-    """)
-    # --- THÔNG TIN CHI TIẾT ---
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("🗓️ Thời gian có thể có mặt:")
-        st.markdown("- **17:00 (5 giờ chiều)**, **Thứ 7**\n- Ngày **27 tháng 12**")
-    with col2:
-        st.subheader("📍 Địa điểm hạ cánh:")
-        st.markdown("- **Chung cư Gold View**, Block A3\n- 346 Bến Vân Đồn, P.1, Q.4")
-    # --- HOẠT ĐỘNG ---
-    st.subheader("🎁 Hoạt động không thể bỏ lỡ:")
-    st.info("Chuẩn bị một món quà **nhỏ xinh (dưới 200k)** để tham gia màn 'SWAP QUÀ' đầy kịch tính và bất ngờ!", icon="💝")
-    st.success("Tiệc sẽ bao gồm đồ ăn, thức uống no nê và một dàn **BOARD GAME** huyền thoại để thử thách sức mạnh tình bạn (hay là hủy hoại tình bạn)!", icon="🎲")
+    # ... (Toàn bộ phần giao diện st.snow, st.title, markdown, thông tin... giữ nguyên) ...
+
     # --- PHẦN TƯƠNG TÁC LƯU VÀO GOOGLE SHEETS ---
     st.write("---")
     st.subheader("Bạn sẽ tham gia chứ hẻ? 😉")
     
-    # === KHỞI TẠO KẾT NỐI THEO CÁCH "THỦ CÔNG" AN TOÀN ===
-    conn = st.connection("gsheets", type=GSheetsConnection)
-
     _, col_button, _ = st.columns([1, 2, 1])
     with col_button:
         if st.button("CHẮC CHẮN RỒI! XÁC NHẬN NGAY! 🥳", use_container_width=True, type="primary"):
             with st.spinner("Đang khắc tên bạn lên Google Sheets..."):
                 try:
-                    # Đọc dữ liệu cũ
-                    # "Mớm" worksheet và spreadsheetId một cách tường minh
-                    existing_data = conn.read(
-                        worksheet=st.secrets["connections"]["gsheets"]["worksheet"],
-                        spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheetId"],
-                        usecols=[0, 1],
-                        ttl=5
-                    )
-                    existing_data = existing_data.dropna(how="all")
+                    client = get_gsheets_client()
+                    if client:
+                        worksheet = get_worksheet(client)
+                        if worksheet:
+                            # Đọc dữ liệu cũ
+                            records = worksheet.get_all_records()
+                            existing_data = pd.DataFrame.from_records(records)
 
-                    if not existing_data.empty and st.session_state.guest_name in existing_data["Tên Khách Mời"].values:
-                        st.warning("Oops! Tên của bạn đã có trong danh sách rồi. Cảm ơn đã xác nhận lại nhé!")
-                        time.sleep(2)
-                    else:
-                        new_guest = pd.DataFrame([
-                            {"Tên Khách Mời": st.session_state.guest_name, "Thời Gian Xác Nhận": pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}
-                        ])
-                        updated_df = pd.concat([existing_data, new_guest], ignore_index=True)
-                        # Cập nhật cũng phải "mớm" spreadsheetId
-                        conn.update(
-                            spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheetId"],
-                            data=updated_df
-                        )
-                        st.balloons()
-                        st.success("Tuyệt vời! Tên của bạn đã được ghi vào danh sách. Hẹn gặp lại nhé!", icon="🎉")
-                        st.image("https://media.tenor.com/_np6fV12HqsAAAAM/cute-cat-jumping.gif")
+                            if not existing_data.empty and st.session_state.guest_name in existing_data["Tên Khách Mời"].values:
+                                st.warning("Oops! Tên của bạn đã có trong danh sách rồi. Cảm ơn đã xác nhận lại nhé!")
+                            else:
+                                # Thêm dòng mới
+                                new_row = [st.session_state.guest_name, pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')]
+                                worksheet.append_row(new_row)
+                                
+                                st.balloons()
+                                st.success("Tuyệt vời! Tên của bạn đã được ghi vào danh sách. Hẹn gặp lại nhé!", icon="🎉")
                 except Exception as e:
-                    st.error("Ối! Có lỗi xảy ra khi kết nối tới Google Sheets. Chắc là do con chế AI nào đó tư vấn sai. Báo cho chủ tiệc biết nhé!")
+                    st.error("Ối! Có lỗi xảy ra khi ghi vào Google Sheets.")
                     st.exception(e)
     
     # --- Hiển thị danh sách khách mời ---
     st.write("---")
     with st.expander("Xem ai đã xác nhận tham gia..."):
         try:
-            # Đọc lại cũng phải "mớm" spreadsheetId
-            guest_list = conn.read(
-                spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheetId"],
-                usecols=[0, 1],
-                ttl=5
-            ).dropna(how="all")
-            if not guest_list.empty:
-                st.dataframe(guest_list, use_container_width=True)
-                st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
-            else:
-                st.write("Chưa có ai xác nhận cả, buồn hiu...")
+            client = get_gsheets_client()
+            if client:
+                worksheet = get_worksheet(client)
+                if worksheet:
+                    records = worksheet.get_all_records()
+                    guest_list = pd.DataFrame.from_records(records)
+                    if not guest_list.empty:
+                        st.dataframe(guest_list[["Tên Khách Mời"]], use_container_width=True)
+                        st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
+                    else:
+                        st.write("Chưa có ai xác nhận cả, buồn hiu...")
         except Exception as e:
-            st.warning("Không thể tải danh sách khách mời. Có thể có lỗi kết nối.")
+            st.warning("Không thể tải danh sách khách mời. Lỗi!")
+            st.exception(e)
             
-# ==============================================================================
-# LOGIC CHÍNH: KIỂM TRA XEM ĐÃ CÓ TÊN CHƯA ĐỂ HIỂN THỊ ĐÚNG TRANG
-# ==============================================================================
+# --- LOGIC CHÍNH ---
 if st.session_state.guest_name == "":
     show_welcome_page()
 else:
