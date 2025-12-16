@@ -74,7 +74,7 @@ def show_invite_page():
                 conn = st.connection("gsheets", type=GSheetsConnection)
                 
                 # Đọc dữ liệu cũ
-                existing_data = conn.read(worksheet="Sheet1", usecols=[0, 1], ttl=5)
+                existing_data = conn.read(worksheet="Guest_list", usecols=[0, 1], ttl=5)
                 existing_data = existing_data.dropna(how="all")
 
                 # Kiểm tra trùng lặp
