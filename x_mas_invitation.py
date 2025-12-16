@@ -39,7 +39,7 @@ def show_welcome_page():
 def show_invite_page():
     # --- HIỆU ỨNG VÀ TIÊU ĐỀ ---
     st.snow()
-    st.title(f"🎅 Chào {st.session_state.guest_name}, một tấm vé tới buổi tiệc dành cho hội chơi game zà cầu lông!")
+    st.title(f"🎅 Chào {st.session_state.guest_name}, đây là một tấm vé tới buổi tiệc dành cho hội chơi game zà cầu lông!")
     st.header("✨ **Christmas Party - Phiên bản 'Nhà có gì chơi đó'** ✨", divider='rainbow')
 
     st.markdown("""
