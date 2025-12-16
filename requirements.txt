@@ -1,5 +1,6 @@
 streamlit
 pandas
+streamlit-gsheets-connection
 openpyxl
 xlsxwriter
 
@@ -15,7 +16,8 @@ wordcloud
 matplotlib
 google-cloud-bigquery-storage
 db-dtypes
-streamlit-gsheets-connection
+
+
 
 
 
