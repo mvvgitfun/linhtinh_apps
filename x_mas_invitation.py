@@ -1,38 +1,60 @@
 import streamlit as st
+import pandas as pd
+import time
+from streamlit_gsheets import GSheetsConnection
 
-st.title("🕵️ TRANG DEBUG BÍ MẬT 🕵️")
+# --- Cấu hình trang web ---
+st.set_page_config(...)
 
-st.write("Dưới đây là toàn bộ những gì mà `st.secrets` đang đọc được:")
+# --- Khởi tạo session state ---
+if 'guest_name' not in st.session_state:
+    st.session_state.guest_name = ""
 
-# In ra toàn bộ nội dung của st.secrets
-st.write(st.secrets.to_dict())
+def show_welcome_page():
+    # ... code không đổi ...
 
-st.write("---")
-st.subheader("Check từng thành phần:")
+def show_invite_page():
+    # ... code không đổi ...
 
-# Kiểm tra xem có mục connections.gsheets không
-if "connections" in st.secrets and "gsheets" in st.secrets["connections"]:
-    st.success("✅ Đã tìm thấy mục [connections.gsheets]!")
+    # --- PHẦN TƯƠNG TÁC LƯU VÀO GOOGLE SHEETS ---
+    st.write("---")
+    st.subheader("Bạn sẽ tham gia chứ hẻ? 😉")
     
-    gsheets_config = st.secrets["connections"]["gsheets"]
+    # === ĐIỂM THAY THẾ QUAN TRỌNG NHẤT ===
+     spreadsheet_id = st.secrets["connections"]["gsheets"]["spreadsheetId"]
+    worksheet_name = st.secrets["connections"]["gsheets"]["worksheet"]
+    conn = st.connection(
+        "gsheets",
+        type=GSheetsConnection,
+        spreadsheet=spreadsheet_id,
+        worksheet=worksheet_name,
+    )
+    #======================================
+
+    _, col_button, _ = st.columns([1, 2, 1])
+    with col_button:
+        if st.button("CHẮC CHẮN RỒI! XÁC NHẬN NGAY! 🥳", use_container_width=True, type="primary"):
+            with st.spinner("Đang khắc tên bạn lên Google Sheets..."):
+                try:
+                    existing_data = conn.read(usecols=[0, 1], ttl=5) # Không cần truyền worksheet nữa
+                    # ... code còn lại không đổi ...
+                    
+                    # ... khi update cũng không cần truyền worksheet
+                    conn.update(data=updated_df) 
+                    
+                except Exception as e:
+                    # ...
     
-    # Kiểm tra spreadsheetId
-    if "spreadsheetId" in gsheets_config:
-        st.success(f"✅ Đã tìm thấy `spreadsheetId`: {gsheets_config['spreadsheetId']}")
-    else:
-        st.error("❌ KHÔNG TÌM THẤY `spreadsheetId`!")
+    # --- Hiển thị danh sách khách mời ---
+    st.write("---")
+    with st.expander("Xem ai đã xác nhận tham gia..."):
+        try:
+            # Ở đây cũng không cần truyền worksheet
+            guest_list = conn.read(usecols=[0], ttl=5).dropna(how="all")
+            # ... code còn lại không đổi ...
 
-    # Kiểm tra worksheet
-    if "worksheet" in gsheets_config:
-        st.success(f"✅ Đã tìm thấy `worksheet`: {gsheets_config['worksheet']}")
-    else:
-        st.error("❌ KHÔNG TÌM THẤY `worksheet`!")
-
-    # Kiểm tra credentials
-    if "credentials" in gsheets_config and "private_key" in gsheets_config["credentials"]:
-        st.success("✅ Đã tìm thấy mục `credentials` và `private_key`!")
-    else:
-        st.error("❌ KHÔNG TÌM THẤY `credentials` hoặc `private_key` bên trong!")
-
+# --- Logic chính ---
+if st.session_state.guest_name == "":
+    show_welcome_page()
 else:
-    st.error("❌ LỖI NGHIÊM TRỌNG: KHÔNG TÌM THẤY MỤC `[connections.gsheets]` TRONG SECRETS!")
+    show_invite_page()
