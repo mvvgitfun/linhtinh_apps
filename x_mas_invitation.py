@@ -101,7 +101,7 @@ def show_invite_page():
     st.write("---")
     with st.expander("Xem ai đã xác nhận tham gia..."):
         conn_display = st.connection("gsheets", type=GSheetsConnection)
-        guest_list = conn_display.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
+        guest_list = conn_display.read(worksheet="Guest_list", usecols=[0], ttl=5).dropna(how="all")
         if not guest_list.empty:
             st.dataframe(guest_list, use_container_width=True)
             st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
