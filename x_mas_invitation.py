@@ -74,7 +74,7 @@ def show_invite_page():
                 conn = st.connection("gsheets", type=GSheetsConnection)
                 
                 # Đọc dữ liệu cũ
-                existing_data = conn.read(worksheet="Guest_list", usecols=[0, 1], ttl=5)
+                existing_data = conn.read(worksheet="Sheet1", usecols=[0, 1], ttl=5)
                 existing_data = existing_data.dropna(how="all")
 
                 # Kiểm tra trùng lặp
@@ -101,10 +101,10 @@ def show_invite_page():
     st.write("---")
     with st.expander("Xem ai đã xác nhận tham gia..."):
         conn_display = st.connection("gsheets", type=GSheetsConnection)
-        guest_list = conn_display.read(worksheet="Guest_list", usecols=[0], ttl=5).dropna(how="all")
-        if not guest_list.empty:
-            st.dataframe(guest_list, use_container_width=True)
-            st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
+        Sheet1 = conn_display.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
+        if not Sheet1.empty:
+            st.dataframe(Sheet1, use_container_width=True)
+            st.info(f"Tổng cộng đã có **{len(Sheet1)}** người xác nhận tham gia!")
         else:
             st.write("Chưa có ai xác nhận cả, buồn hiu...")
             
