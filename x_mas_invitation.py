@@ -20,7 +20,9 @@ if 'guest_name' not in st.session_state:
 def show_welcome_page():
     st.title("💌 Bạn ei, bạn có một thư mời đặc biệt!")
     st.write("Vui lòng cho toai biết tên của bạn để mở thiệp mời nhó hẹ hẹ:")
+
     name_input = st.text_input("Tên bạn là gì nào?", placeholder="Ví dụ: Ní Đẹp Trai", label_visibility="collapsed")
+
     if st.button("Xem Thiệp Mời 📬", use_container_width=True, type="primary"):
         if name_input:
             st.session_state.guest_name = name_input
@@ -39,7 +41,6 @@ def show_invite_page():
 
     st.markdown("""
     Nhân dịp không có gì đặc biệt nhưng vẫn muốn tụ tập, chúng toai trân trọng (và hơi ép buộc một chút) mời bạn đến tham dự một buổi tiệc Giáng Sinh "cây nhà lá vườn".
-
     Hãy chuẩn bị một tâm hồn đẹp, một chiếc bụng đói và một tinh thần sẵn sàng "quẩy tới bến"!
     """)
 
@@ -61,47 +62,53 @@ def show_invite_page():
     st.write("---")
     st.subheader("Bạn sẽ tham gia chứ hẻ? 😉")
     
-    # === ĐIỂM THAY THẾ QUAN TRỌNG ĐỂ FIX LỖI ===
-    # Thay vì dùng st.connection, ta tạo thủ công từ st.secrets để chắc ăn hơn
-    conn = st.experimental_connection(
-        "gsheets",
-        type=GSheetsConnection,
-    )
-    #===============================================
+    # Thiết lập kết nối MỘT LẦN DUY NHẤT để tái sử dụng
+    conn = st.connection("gsheets", type=GSheetsConnection)
 
     _, col_button, _ = st.columns([1, 2, 1])
     with col_button:
         if st.button("CHẮC CHẮN RỒI! XÁC NHẬN NGAY! 🥳", use_container_width=True, type="primary"):
             with st.spinner("Đang khắc tên bạn lên Google Sheets..."):
-                existing_data = conn.read(worksheet="Sheet1", usecols=[0, 1], ttl=5)
-                existing_data = existing_data.dropna(how="all")
+                try:
+                    # Đọc dữ liệu cũ
+                    existing_data = conn.read(worksheet="Sheet1", usecols=[0, 1], ttl=5)
+                    existing_data = existing_data.dropna(how="all")
 
-                if st.session_state.guest_name in existing_data["Tên Khách Mời"].values:
-                    st.warning("Oops! Tên của bạn đã có trong danh sách rồi. Cảm ơn đã xác nhận lại nhé!")
-                    time.sleep(2)
-                else:
-                    new_guest = pd.DataFrame([
-                        {
-                            "Tên Khách Mời": st.session_state.guest_name,
-                            "Thời Gian Xác Nhận": pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        }
-                    ])
-                    updated_df = pd.concat([existing_data, new_guest], ignore_index=True)
-                    conn.update(worksheet="Sheet1", data=updated_df)
-                    
-                    st.balloons()
-                    st.success("Tuyệt vời! Tên của bạn đã được ghi vào danh sách. Hẹn gặp lại nhé!", icon="🎉")
-                    st.image("https://media.tenor.com/_np6fV12HqsAAAAM/cute-cat-jumping.gif")
+                    # Kiểm tra trùng lặp
+                    if st.session_state.guest_name in existing_data["Tên Khách Mời"].values:
+                        st.warning("Oops! Tên của bạn đã có trong danh sách rồi. Cảm ơn đã xác nhận lại nhé!")
+                        time.sleep(2)
+                    else:
+                        # Tạo DataFrame mới
+                        new_guest = pd.DataFrame([
+                            {
+                                "Tên Khách Mời": st.session_state.guest_name,
+                                "Thời Gian Xác Nhận": pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            }
+                        ])
+                        # Nối và cập nhật lại Sheet
+                        updated_df = pd.concat([existing_data, new_guest], ignore_index=True)
+                        conn.update(worksheet="Sheet1", data=updated_df)
+                        
+                        st.balloons()
+                        st.success("Tuyệt vời! Tên của bạn đã được ghi vào danh sách. Hẹn gặp lại nhé!", icon="🎉")
+                        st.image("https://media.tenor.com/_np6fV12HqsAAAAM/cute-cat-jumping.gif")
+                except Exception as e:
+                    st.error("Ối! Có lỗi xảy ra khi kết nối tới Google Sheets. Vui lòng báo cho chủ tiệc biết nhé!")
+                    st.error(f"Chi tiết lỗi: {e}") # Giúp ní debug
     
     # --- Hiển thị danh sách khách mời ---
     st.write("---")
     with st.expander("Xem ai đã xác nhận tham gia..."):
-        guest_list = conn.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
-        if not guest_list.empty:
-            st.dataframe(guest_list, use_container_width=True)
-            st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
-        else:
-            st.write("Chưa có ai xác nhận cả, buồn hiu...")
+        try:
+            guest_list = conn.read(worksheet="Sheet1", usecols=[0], ttl=5).dropna(how="all")
+            if not guest_list.empty:
+                st.dataframe(guest_list, use_container_width=True)
+                st.info(f"Tổng cộng đã có **{len(guest_list)}** người xác nhận tham gia!")
+            else:
+                st.write("Chưa có ai xác nhận cả, buồn hiu...")
+        except Exception as e:
+            st.warning("Không thể tải danh sách khách mời. Có thể có lỗi kết nối.")
             
 # ==============================================================================
 # LOGIC CHÍNH: KIỂM TRA XEM ĐÃ CÓ TÊN CHƯA ĐỂ HIỂN THỊ ĐÚNG TRANG
